@@ -168,13 +168,12 @@ Chatbot to answer medical questions related to Alzheimer's.
 
 **Available at:**
 - Local: http://localhost:8501/
-- Cloud: [https://brainsight-ai.streamlit.app/](https://brainsight-ai.streamlit.app/)
 
 ## 🔧 How to Get the Code
 
 ```bash
-git clone https://github.com/napilkington/BrainSight-AI.git
-cd Brainsight-AI
+git clone https://github.com/Kutcher1945/remind_analysis.git
+cd remind_analysis
 ```
 
 ### Create a Virtual Environment
