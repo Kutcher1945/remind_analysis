@@ -153,7 +153,7 @@ Both assistants use the **Gemini 1.5 Flash model**, with the API key stored as a
 
 ## 💻 Streamlit Application
 
-![Streamlit Interface](https://github.com/napilkington/BrainSight-AI/blob/main/img/streamlit.png?raw=true)
+![Streamlit Interface]
 
 The application has three interfaces accessible from the sidebar menu:
 
