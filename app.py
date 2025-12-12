@@ -18,7 +18,7 @@ load_dotenv()
 # Configure Gemini API Key
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    st.error("⚠️ Gemini API key is not configured. Check your .env file or define the key in the code.")
+    st.error("⚠️ API ключ Gemini не настроен. Проверьте ваш файл .env или определите ключ в коде.")
     st.stop()
 
 # Configure Gemini
@@ -290,26 +290,26 @@ def validate_mri_image(image_base64):
     Returns:
         tuple: (is_valid: bool, message: str, confidence: str)
     """
-    validation_prompt = """Analyze this image carefully and determine if it is a brain MRI (Magnetic Resonance Imaging) scan.
+    validation_prompt = """Проанализируйте это изображение внимательно и определите, является ли оно МРТ снимком головного мозга.
 
-You must respond in this EXACT format:
-VALID: [YES/NO]
-CONFIDENCE: [HIGH/MEDIUM/LOW]
-REASON: [Brief explanation]
+Вы должны ответить ТОЧНО в этом формате:
+ВАЛИДНО: [ДА/НЕТ]
+УВЕРЕННОСТЬ: [ВЫСОКАЯ/СРЕДНЯЯ/НИЗКАЯ]
+ПРИЧИНА: [Краткое объяснение]
 
-Criteria for a valid brain MRI:
-1. Must be a medical imaging scan (grayscale or colored medical imaging)
-2. Must show brain structures (cerebral cortex, ventricles, white/gray matter)
-3. Must be an MRI scan (not CT, X-ray, ultrasound, or other imaging types)
-4. Should be a proper axial, sagittal, or coronal brain view
-5. Not a photograph, drawing, or non-medical image
+Критерии для валидного МРТ головного мозга:
+1. Должно быть медицинским изображением (черно-белое или цветное медицинское изображение)
+2. Должны быть видны структуры мозга (кора головного мозга, желудочки, белое/серое вещество)
+3. Должно быть МРТ снимком (не КТ, рентген, УЗИ или другие типы изображений)
+4. Должен быть правильный аксиальный, сагиттальный или корональный вид мозга
+5. Не фотография, рисунок или немедицинское изображение
 
-Examples of INVALID images:
-- Photos of people, animals, objects, landscapes
-- Other body part scans (knee, chest, abdomen MRI)
-- CT scans, X-rays, ultrasounds
-- Low quality or completely blurred images
-- Drawings or illustrations"""
+Примеры НЕВАЛИДНЫХ изображений:
+- Фотографии людей, животных, объектов, пейзажей
+- Снимки других частей тела (колено, грудь, живот МРТ)
+- КТ снимки, рентгеновские снимки, УЗИ
+- Низкокачественные или полностью размытые изображения
+- Рисунки или иллюстрации"""
 
     payload = {
         "model": "pixtral-12b-2409",
@@ -343,26 +343,26 @@ Examples of INVALID images:
             result_text = data.get('choices', [{}])[0].get('message', {}).get('content', '')
 
             # Parse the response
-            is_valid = "VALID: YES" in result_text.upper()
+            is_valid = "ВАЛИДНО: ДА" in result_text.upper() or "VALID: YES" in result_text.upper()
 
             # Extract confidence and reason
             lines = result_text.strip().split('\n')
-            confidence = "UNKNOWN"
-            reason = "No reason provided"
+            confidence = "НЕИЗВЕСТНО"
+            reason = "Причина не указана"
 
             for line in lines:
-                if "CONFIDENCE:" in line.upper():
+                if "УВЕРЕННОСТЬ:" in line.upper() or "CONFIDENCE:" in line.upper():
                     confidence = line.split(':', 1)[1].strip()
-                elif "REASON:" in line.upper():
+                elif "ПРИЧИНА:" in line.upper() or "REASON:" in line.upper():
                     reason = line.split(':', 1)[1].strip()
 
             return is_valid, reason, confidence
         else:
-            return False, f"Validation service error (Status {response.status_code})", "LOW"
+            return False, f"Ошибка сервиса валидации (Статус {response.status_code})", "НИЗКАЯ"
 
     except Exception as e:
-        st.warning(f"⚠️ Could not validate image: {str(e)}. Proceeding with caution...")
-        return True, "Validation skipped due to error", "LOW"
+        st.warning(f"⚠️ Не удалось проверить изображение: {str(e)}. Продолжаем с осторожностью...")
+        return True, "Проверка пропущена из-за ошибки", "НИЗКАЯ"
 
 
 def analyze_brain_regions(image_base64, predicted_class, confidence_percent):
@@ -377,45 +377,46 @@ def analyze_brain_regions(image_base64, predicted_class, confidence_percent):
     Returns:
         str: Detailed medical analysis of brain regions
     """
-    analysis_prompt = f"""You are an expert radiologist analyzing a brain MRI scan.
+    analysis_prompt = f"""Вы эксперт-радиолог, анализирующий МРТ снимок головного мозга. ОТВЕЧАЙТЕ ТОЛЬКО НА РУССКОМ ЯЗЫКЕ.
 
-**Clinical Context:**
-- AI Model Prediction: {predicted_class}
-- Model Confidence: {confidence_percent:.1f}%
+**Клинический контекст:**
+- Прогноз модели ИИ: {predicted_class}
+- Уверенность модели: {confidence_percent:.1f}%
 
-**Your Task:**
-Analyze this brain MRI image and provide a detailed assessment of the following:
+**Ваша задача:**
+Проанализируйте это МРТ изображение головного мозга и предоставьте детальную оценку следующего:
 
-1. **Hippocampal Region:** Assess for atrophy, volume loss, or structural changes
-2. **Ventricular System:** Evaluate ventricular size and any enlargement
-3. **Cortical Regions:** Look for cortical thinning, especially in temporal and parietal lobes
-4. **White Matter:** Identify any white matter hyperintensities or lesions
-5. **Overall Brain Structure:** General observations on brain volume and symmetry
+1. **Гиппокампальная область:** Оценить атрофию, потерю объема или структурные изменения
+2. **Желудочковая система:** Оценить размер желудочков и любое расширение
+3. **Корковые области:** Искать истончение коры, особенно в височных и теменных долях
+4. **Белое вещество:** Определить любые гиперинтенсивности белого вещества или повреждения
+5. **Общая структура мозга:** Общие наблюдения об объеме и симметрии мозга
 
-**Format your response as:**
+**Форматируйте ваш ответ так:**
 
-🧠 REGIONAL ANALYSIS
+🧠 РЕГИОНАЛЬНЫЙ АНАЛИЗ
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📍 Hippocampus & Medial Temporal Lobe:
-[Your detailed findings]
+📍 Гиппокамп и медиальная височная доля:
+[Ваши детальные находки]
 
-📍 Ventricular System:
-[Your detailed findings]
+📍 Желудочковая система:
+[Ваши детальные находки]
 
-📍 Cortical Regions:
-[Your detailed findings]
+📍 Корковые области:
+[Ваши детальные находки]
 
-📍 White Matter:
-[Your detailed findings]
+📍 Белое вещество:
+[Ваши детальные находки]
 
-📍 Overall Assessment:
-[Summary of key findings]
+📍 Общая оценка:
+[Резюме ключевых находок]
 
-🎯 CORRELATION WITH AI PREDICTION:
-[How your findings support or contradict the AI prediction of "{predicted_class}"]
+🎯 КОРРЕЛЯЦИЯ С ПРОГНОЗОМ ИИ:
+[Как ваши находки подтверждают или противоречат прогнозу ИИ "{predicted_class}"]
 
-**Important:** Be specific about locations (left/right hemisphere, anterior/posterior, etc.) and severity (mild/moderate/severe).
+**Важно:** Будьте конкретны относительно локализации (левое/правое полушарие, передний/задний отдел и т.д.) и тяжести (легкая/умеренная/тяжелая).
+ОТВЕЧАЙТЕ ПОЛНОСТЬЮ НА РУССКОМ ЯЗЫКЕ.
 """
 
     payload = {
@@ -448,12 +449,12 @@ Analyze this brain MRI image and provide a detailed assessment of the following:
         if response.status_code == 200:
             data = response.json()
             analysis_text = data.get('choices', [{}])[0].get('message', {}).get('content', '')
-            return analysis_text if analysis_text else "Unable to generate detailed analysis."
+            return analysis_text if analysis_text else "Невозможно сгенерировать детальный анализ."
         else:
-            return f"Analysis service temporarily unavailable (Status {response.status_code})"
+            return f"Сервис анализа временно недоступен (Статус {response.status_code})"
 
     except Exception as e:
-        return f"Could not complete regional analysis: {str(e)}"
+        return f"Не удалось завершить региональный анализ: {str(e)}"
 
 # Load Alzheimer's model
 @st.cache_resource
@@ -465,8 +466,8 @@ def load_model():
 
 model = load_model()
 
-# Class definitions in English
-class_names = ['Mild Impairment', 'Moderate Impairment', 'No Impairment', 'Very Mild Impairment']
+# Class definitions in Russian
+class_names = ['Легкое нарушение', 'Умеренное нарушение', 'Нет нарушений', 'Очень легкое нарушение']
 
 # Preprocessing transformations
 transform = transforms.Compose([
@@ -477,7 +478,7 @@ transform = transforms.Compose([
 
 # Sidebar
 st.sidebar.image('img/logo_3.jpg', use_container_width=True)
-options = st.sidebar.radio('Options:', ['Patient Data', 'Diagnosis', 'Virtual Assistant'])
+options = st.sidebar.radio('Опции:', ['Данные пациента', 'Диагностика', 'Виртуальный ассистент'])
 
 # Main page image
 
@@ -688,16 +689,16 @@ st.markdown(
 
 # st.image('img/home_page.jpg', use_container_width=True)
 
-if options == 'Patient Data':
+if options == 'Данные пациента':
     exec(open("paciente.py", encoding="utf-8").read())
 
-elif options == 'Diagnosis':
+elif options == 'Диагностика':
     # Header with modern design
     st.markdown("""
         <div style='text-align: center; padding: 1rem 0 2rem 0;'>
-            <h2 style='margin-bottom: 0.5rem;'>🧠 AI-Powered Diagnosis</h2>
+            <h2 style='margin-bottom: 0.5rem;'>🧠 Диагностика на основе ИИ</h2>
             <h4 style='color: #718096; font-weight: 400;'>
-                Advanced Alzheimer's Classification using Deep Learning & MRI Analysis
+                Продвинутая классификация болезни Альцгеймера с использованием глубокого обучения и анализа МРТ
             </h4>
         </div>
     """, unsafe_allow_html=True)
@@ -706,7 +707,7 @@ elif options == 'Diagnosis':
     st.markdown("""
         <div style='text-align: center; margin-bottom: 1.5rem;'>
             <p style='font-size: 1.1rem; color: #4a5568;'>
-                📸 Upload an MRI scan to begin analysis
+                📸 Загрузите МРТ снимок для начала анализа
             </p>
         </div>
     """, unsafe_allow_html=True)
@@ -714,9 +715,9 @@ elif options == 'Diagnosis':
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         uploaded_file = st.file_uploader(
-            "Drop your MRI image here or click to browse",
+            "Перетащите изображение МРТ сюда или нажмите для выбора",
             type=["jpg", "jpeg", "png"],
-            help="Supported formats: JPG, JPEG, PNG"
+            help="Поддерживаемые форматы: JPG, JPEG, PNG"
         )
 
     # Variable to store the prediction
@@ -741,35 +742,35 @@ elif options == 'Diagnosis':
             )
 
         # STAGE 1: Validate image using Pixtral AI
-        with st.spinner('🔍 Validating image with Pixtral AI...'):
+        with st.spinner('🔍 Проверка изображения с помощью Pixtral AI...'):
             is_valid, reason, confidence = validate_mri_image(image_base64)
 
         if not is_valid:
             # Image is NOT a brain MRI - show error
             st.error(f"""
-            ❌ **Invalid Image Detected**
+            ❌ **Обнаружено недействительное изображение**
 
-            This does not appear to be a brain MRI scan.
+            Это не похоже на МРТ снимок головного мозга.
 
-            **AI Analysis:** {reason}
+            **Анализ ИИ:** {reason}
 
-            **Please upload:**
-            - Brain MRI scans (axial, sagittal, or coronal views)
-            - Medical imaging in standard formats (JPG, PNG)
-            - Clear, properly oriented scans
+            **Пожалуйста, загрузите:**
+            - МРТ снимки головного мозга (аксиальные, сагиттальные или корональные виды)
+            - Медицинские изображения в стандартных форматах (JPG, PNG)
+            - Четкие, правильно ориентированные снимки
 
-            **Not accepted:**
-            - Photos, screenshots, or non-medical images
-            - CT scans, X-rays, or other imaging modalities
-            - MRI scans of other body parts
+            **Не принимаются:**
+            - Фотографии, скриншоты или немедицинские изображения
+            - КТ снимки, рентгеновские снимки или другие методы визуализации
+            - МРТ снимки других частей тела
             """)
             st.stop()  # Stop execution - don't proceed to prediction
         else:
             # Image validated successfully
-            st.success(f"✅ **Image Validated:** {reason} (Confidence: {confidence})")
+            st.success(f"✅ **Изображение проверено:** {reason} (Уверенность: {confidence})")
 
         # STAGE 2: Processing and prediction with loading animation
-        with st.spinner('🔬 Analyzing MRI scan with AI model...'):
+        with st.spinner('🔬 Анализ МРТ снимка с помощью модели ИИ...'):
             input_image = transform(image).unsqueeze(0)
 
             with torch.no_grad():
@@ -787,11 +788,11 @@ elif options == 'Diagnosis':
         # Display prediction with enhanced design
         st.markdown(f"""
             <div class='prediction-box'>
-                <h3>🎯 Diagnosis Result</h3>
+                <h3>🎯 Результат диагностики</h3>
                 <p style='font-size: 2rem; margin: 1.5rem 0;'>{predicted_class}</p>
                 <div style='background: rgba(255,255,255,0.2); border-radius: 12px; padding: 1rem; margin-top: 1rem;'>
                     <p style='font-size: 1rem; margin: 0; opacity: 0.9;'>
-                        Model Confidence: <strong>{confidence_percent:.1f}%</strong>
+                        Уверенность модели: <strong>{confidence_percent:.1f}%</strong>
                     </p>
                 </div>
             </div>
@@ -801,9 +802,9 @@ elif options == 'Diagnosis':
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("""
             <div style='text-align: center; margin: 2rem 0 1rem 0;'>
-                <h3 style='color: #2d3748;'>🔍 AI Model Attention Visualization (Grad-CAM)</h3>
+                <h3 style='color: #2d3748;'>🔍 Визуализация внимания модели ИИ (Grad-CAM)</h3>
                 <p style='color: #718096; font-size: 0.95rem;'>
-                    Heatmap shows which brain regions the AI focused on to make its prediction
+                    Тепловая карта показывает, на какие области мозга ИИ обратил внимание при прогнозировании
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -811,20 +812,20 @@ elif options == 'Diagnosis':
         # Display three images side by side
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.markdown("<p style='text-align: center; font-weight: 500; color: #4a5568;'>Original MRI</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; font-weight: 500; color: #4a5568;'>Оригинальное МРТ</p>", unsafe_allow_html=True)
             st.image(image, use_container_width=True)
         with col2:
-            st.markdown("<p style='text-align: center; font-weight: 500; color: #4a5568;'>Grad-CAM Heatmap</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; font-weight: 500; color: #4a5568;'>Тепловая карта Grad-CAM</p>", unsafe_allow_html=True)
             st.image(gradcam_results['heatmap_only'], use_container_width=True)
         with col3:
-            st.markdown("<p style='text-align: center; font-weight: 500; color: #4a5568;'>Combined View</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; font-weight: 500; color: #4a5568;'>Комбинированный вид</p>", unsafe_allow_html=True)
             st.image(gradcam_results['overlayed'], use_container_width=True)
 
         st.markdown("""
             <div style='background: #f7fafc; border-left: 4px solid #667eea; padding: 1rem; margin: 1rem 0; border-radius: 8px;'>
                 <p style='margin: 0; color: #4a5568; font-size: 0.9rem;'>
-                    <strong>📊 How to read:</strong> Red/yellow areas indicate regions the AI model focused on.
-                    Hotter colors (red) = higher attention, cooler colors (blue) = lower attention.
+                    <strong>📊 Как читать:</strong> Красные/желтые области указывают на регионы, на которых сосредоточился ИИ.
+                    Более горячие цвета (красный) = большее внимание, более холодные цвета (синий) = меньшее внимание.
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -843,19 +844,19 @@ elif options == 'Diagnosis':
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("""
             <div style='text-align: center; margin: 2rem 0 1rem 0;'>
-                <h3 style='color: #2d3748;'>📋 Multi-Stage AI Analysis Pipeline</h3>
+                <h3 style='color: #2d3748;'>📋 Многоэтапный конвейер анализа ИИ</h3>
                 <p style='color: #718096; font-size: 0.95rem;'>
-                    Complete each step to unlock comprehensive medical insights
+                    Завершите каждый этап для получения комплексных медицинских заключений
                 </p>
             </div>
         """, unsafe_allow_html=True)
 
         # Progress bar
-        progress_steps = ["✅ Diagnosis Complete", "⏳ Regional Analysis", "⏳ Final Recommendations"]
+        progress_steps = ["✅ Диагностика завершена", "⏳ Региональный анализ", "⏳ Финальные рекомендации"]
         if st.session_state.analysis_step >= 1:
-            progress_steps[1] = "✅ Regional Analysis Complete"
+            progress_steps[1] = "✅ Региональный анализ завершен"
         if st.session_state.analysis_step >= 2:
-            progress_steps[2] = "✅ Final Recommendations Complete"
+            progress_steps[2] = "✅ Финальные рекомендации завершены"
 
         cols = st.columns(3)
         for i, (col, step) in enumerate(zip(cols, progress_steps)):
@@ -885,7 +886,7 @@ elif options == 'Diagnosis':
         with col2:
             step2_disabled = st.session_state.analysis_step >= 1
             get_detailed_analysis = st.button(
-                "🔬 Step 2: Get Detailed Brain Region Analysis",
+                "🔬 Этап 2: Получить детальный анализ областей мозга",
                 use_container_width=True,
                 disabled=step2_disabled,
                 type="primary" if not step2_disabled else "secondary"
@@ -893,7 +894,7 @@ elif options == 'Diagnosis':
 
         if get_detailed_analysis or st.session_state.analysis_step >= 1:
             if get_detailed_analysis:
-                with st.spinner("🧠 Analyzing brain regions with Pixtral AI... This may take 5-10 seconds..."):
+                with st.spinner("🧠 Анализ областей мозга с помощью Pixtral AI... Это может занять 5-10 секунд..."):
                     brain_analysis = analyze_brain_regions(image_base64, predicted_class, confidence_percent)
                     st.session_state.brain_analysis_result = brain_analysis
                     st.session_state.analysis_step = 1
@@ -910,8 +911,8 @@ elif options == 'Diagnosis':
 
             # Important disclaimer
             st.info("""
-                ℹ️ **Analysis Complete!** Regional findings have been documented.
-                Proceed to Step 3 for comprehensive treatment recommendations.
+                ℹ️ **Анализ завершен!** Региональные находки зафиксированы.
+                Переходите к Этапу 3 для получения комплексных рекомендаций по лечению.
             """, icon="✅")
 
         # ===================================================================
@@ -925,83 +926,84 @@ elif options == 'Diagnosis':
             - Grad-CAM attention regions
             - Pixtral regional analysis
             """
-            prompt = f"""You are an expert neurologist creating a comprehensive treatment and management plan.
+            prompt = f"""Вы эксперт-невролог, создающий комплексный план лечения и управления. ОТВЕЧАЙТЕ ПОЛНОСТЬЮ НА РУССКОМ ЯЗЫКЕ.
 
-**PATIENT DIAGNOSTIC DATA:**
+**ДИАГНОСТИЧЕСКИЕ ДАННЫЕ ПАЦИЕНТА:**
 
-1. **AI Model Diagnosis:** {diagnosis}
-   - Model Confidence: {confidence:.1f}%
-   - Trained on extensive Alzheimer's MRI dataset (95.47% accuracy)
+1. **Диагноз модели ИИ:** {diagnosis}
+   - Уверенность модели: {confidence:.1f}%
+   - Обучена на обширном датасете МРТ болезни Альцгеймера (точность 95.47%)
 
-2. **AI Model Focus Areas (Grad-CAM Analysis):**
-   - The CNN model primarily focused on: hippocampal regions, ventricular system, and cortical areas
-   - These are the regions that most influenced the AI's classification decision
+2. **Области фокуса модели ИИ (Grad-CAM анализ):**
+   - CNN модель в основном сосредоточилась на: гиппокампальных областях, желудочковой системе и корковых областях
+   - Это области, которые больше всего повлияли на решение классификации ИИ
 
-3. **Detailed Regional Brain Analysis (Pixtral AI):**
+3. **Детальный региональный анализ мозга (Pixtral AI):**
 {brain_analysis}
 
-**YOUR TASK:**
-Based on ALL of the above data (diagnosis, model attention, and detailed regional findings), create a comprehensive, personalized medical action plan.
+**ВАША ЗАДАЧА:**
+На основе ВСЕХ вышеуказанных данных (диагноз, внимание модели и детальные региональные находки), создайте комплексный, персонализированный план медицинских действий.
 
-**FORMAT YOUR RESPONSE AS:**
+**ФОРМАТИРУЙТЕ ВАШ ОТВЕТ ТАК:**
 
-📋 COMPREHENSIVE MEDICAL ACTION PLAN
+📋 КОМПЛЕКСНЫЙ ПЛАН МЕДИЦИНСКИХ ДЕЙСТВИЙ
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🏥 IMMEDIATE NEXT STEPS
-• [Urgent actions required within 1-2 weeks]
-• [Specialist referrals needed]
-• [Additional diagnostic tests to order]
+🏥 НЕМЕДЛЕННЫЕ СЛЕДУЮЩИЕ ШАГИ
+• [Срочные действия, требуемые в течение 1-2 недель]
+• [Необходимые направления к специалистам]
+• [Дополнительные диагностические тесты для назначения]
 
-💊 TREATMENT RECOMMENDATIONS
-• [Medication options based on severity]
-• [Dosing considerations]
-• [Expected outcomes and monitoring]
+💊 РЕКОМЕНДАЦИИ ПО ЛЕЧЕНИЮ
+• [Варианты медикаментов на основе тяжести]
+• [Соображения по дозировке]
+• [Ожидаемые результаты и мониторинг]
 
-🧠 COGNITIVE INTERVENTIONS
-• [Cognitive training programs]
-• [Memory exercises]
-• [Brain health activities]
+🧠 КОГНИТИВНЫЕ ВМЕШАТЕЛЬСТВА
+• [Программы когнитивных тренировок]
+• [Упражнения для памяти]
+• [Активности для здоровья мозга]
 
-🥗 LIFESTYLE MODIFICATIONS
-• [Dietary recommendations (Mediterranean diet, etc.)]
-• [Exercise regimen (aerobic + strength training)]
-• [Sleep hygiene improvements]
-• [Stress management techniques]
+🥗 МОДИФИКАЦИИ ОБРАЗА ЖИЗНИ
+• [Диетические рекомендации (средиземноморская диета и т.д.)]
+• [Режим упражнений (аэробные + силовые тренировки)]
+• [Улучшения гигиены сна]
+• [Техники управления стрессом]
 
-👥 SOCIAL & SUPPORT MEASURES
-• [Caregiver education and support groups]
-• [Social engagement activities]
-• [Safety planning at home]
+👥 СОЦИАЛЬНЫЕ МЕРЫ И ПОДДЕРЖКА
+• [Обучение ухаживающих и группы поддержки]
+• [Активности социального взаимодействия]
+• [Планирование безопасности дома]
 
-📊 MONITORING PLAN
-• [Follow-up imaging schedule (e.g., MRI every 6-12 months)]
-• [Cognitive assessment frequency]
-• [Key biomarkers to track]
+📊 ПЛАН МОНИТОРИНГА
+• [График последующих визуализаций (например, МРТ каждые 6-12 месяцев)]
+• [Частота когнитивной оценки]
+• [Ключевые биомаркеры для отслеживания]
 
-🎯 CORRELATION WITH AI FINDINGS
-• [How the regional brain findings correlate with recommended treatments]
-• [Why specific interventions target the affected regions]
-• [Expected progression based on current findings]
+🎯 КОРРЕЛЯЦИЯ С НАХОДКАМИ ИИ
+• [Как региональные находки мозга коррелируют с рекомендованным лечением]
+• [Почему конкретные вмешательства нацелены на пораженные области]
+• [Ожидаемое прогрессирование на основе текущих находок]
 
-⚠️ RED FLAGS TO WATCH
-• [Symptoms requiring immediate medical attention]
-• [Signs of rapid progression]
-• [Medication side effects to monitor]
+⚠️ ТРЕВОЖНЫЕ ПРИЗНАКИ ДЛЯ НАБЛЮДЕНИЯ
+• [Симптомы, требующие немедленной медицинской помощи]
+• [Признаки быстрого прогрессирования]
+• [Побочные эффекты медикаментов для мониторинга]
 
-🔬 RESEARCH & CLINICAL TRIALS
-• [Relevant ongoing trials for this stage]
-• [Emerging therapies to discuss with neurologist]
+🔬 ИССЛЕДОВАНИЯ И КЛИНИЧЕСКИЕ ИСПЫТАНИЯ
+• [Релевантные текущие испытания для этой стадии]
+• [Развивающиеся терапии для обсуждения с неврологом]
 
-**IMPORTANT:** Be specific, evidence-based, and cite current clinical guidelines where applicable. Tailor recommendations to the severity indicated by the diagnosis ({diagnosis}).
+**ВАЖНО:** Будьте конкретны, основывайтесь на доказательствах и цитируйте текущие клинические руководства, где применимо. Адаптируйте рекомендации к тяжести, указанной диагнозом ({diagnosis}).
+ОТВЕЧАЙТЕ ПОЛНОСТЬЮ НА РУССКОМ ЯЗЫКЕ.
 """
 
             try:
                 response = model_gemini.generate_content(prompt)
                 return response.text
             except Exception as e:
-                st.error(f"Error generating recommendations: {str(e)}")
-                return "Unable to generate recommendations. Please consult with a physician."
+                st.error(f"Ошибка генерации рекомендаций: {str(e)}")
+                return "Невозможно сгенерировать рекомендации. Пожалуйста, проконсультируйтесь с врачом."
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1009,15 +1011,15 @@ Based on ALL of the above data (diagnosis, model attention, and detailed regiona
         with col2:
             step3_disabled = st.session_state.analysis_step < 1
             get_recommendations = st.button(
-                "🩺 Step 3: Get Comprehensive Medical Recommendations",
+                "🩺 Этап 3: Получить комплексные медицинские рекомендации",
                 use_container_width=True,
                 disabled=step3_disabled,
                 type="primary" if not step3_disabled else "secondary",
-                help="Complete Step 2 first" if step3_disabled else "Generate final recommendations using all analysis data"
+                help="Сначала завершите Этап 2" if step3_disabled else "Сгенерировать финальные рекомендации, используя все данные анализа"
             )
 
         if get_recommendations:
-            with st.spinner("🤖 Synthesizing comprehensive medical recommendations from all data sources... This may take 10-15 seconds..."):
+            with st.spinner("🤖 Синтез комплексных медицинских рекомендаций из всех источников данных... Это может занять 10-15 секунд..."):
                 recommendations = get_comprehensive_recommendations(
                     diagnosis=predicted_class,
                     confidence=confidence_percent,
@@ -1028,39 +1030,39 @@ Based on ALL of the above data (diagnosis, model attention, and detailed regiona
 
             # Display comprehensive disclaimer
             st.warning("""
-                ⚠️ **CRITICAL MEDICAL DISCLAIMER**
+                ⚠️ **КРИТИЧЕСКОЕ МЕДИЦИНСКОЕ ПРЕДУПРЕЖДЕНИЕ**
 
-                This comprehensive analysis integrates:
-                - ✅ CNN Model Diagnosis (95.47% accuracy on test data)
-                - ✅ Grad-CAM Attention Visualization (AI decision transparency)
-                - ✅ Pixtral Regional Brain Analysis (AI radiological interpretation)
-                - ✅ Gemini Medical Knowledge (Evidence-based recommendations)
+                Этот комплексный анализ интегрирует:
+                - ✅ Диагноз CNN модели (точность 95.47% на тестовых данных)
+                - ✅ Визуализация внимания Grad-CAM (прозрачность решений ИИ)
+                - ✅ Региональный анализ мозга Pixtral (радиологическая интерпретация ИИ)
+                - ✅ Медицинские знания Gemini (рекомендации на основе доказательств)
 
-                **HOWEVER:**
-                - ❌ This is NOT a clinical diagnosis
-                - ❌ This does NOT replace a neurologist, radiologist, or physician
-                - ❌ This is NOT FDA approved for clinical decision-making
-                - ❌ AI can make mistakes and may hallucinate findings
+                **ОДНАКО:**
+                - ❌ Это НЕ клинический диагноз
+                - ❌ Это НЕ заменяет невролога, радиолога или врача
+                - ❌ Это НЕ одобрено FDA для клинических решений
+                - ❌ ИИ может делать ошибки и может галлюцинировать находки
 
-                **REQUIRED ACTIONS:**
-                - ✅ Share these results with a qualified healthcare provider
-                - ✅ Obtain professional radiological interpretation of the MRI
-                - ✅ Undergo comprehensive neurological evaluation
-                - ✅ Follow your doctor's recommendations, not AI suggestions alone
+                **ОБЯЗАТЕЛЬНЫЕ ДЕЙСТВИЯ:**
+                - ✅ Поделитесь этими результатами с квалифицированным медицинским работником
+                - ✅ Получите профессиональную радиологическую интерпретацию МРТ
+                - ✅ Пройдите комплексную неврологическую оценку
+                - ✅ Следуйте рекомендациям вашего врача, а не только предложениям ИИ
 
-                **This tool is designed to ASSIST medical professionals, not replace them.**
+                **Этот инструмент предназначен для ПОМОЩИ медицинским специалистам, а не для их замены.**
             """, icon="⚠️")
 
             # Display recommendations with modern design
             st.markdown(f"""
                 <div class='recommendations-box' style='border: 3px solid #667eea;'>
                     <h2 style='text-align: center; margin-bottom: 2rem;'>
-                        💊 Comprehensive Medical Action Plan
+                        💊 Комплексный план медицинских действий
                     </h2>
                     <div style='background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;'>
                         <p style='margin: 0; color: #1e40af; font-size: 0.95rem;'>
-                            <strong>📊 Data Sources Used:</strong> CNN Diagnosis ({predicted_class}, {confidence_percent:.1f}% confidence)
-                            + Grad-CAM Visualization + Regional Brain Analysis + Medical Literature
+                            <strong>📊 Использованные источники данных:</strong> Диагноз CNN ({predicted_class}, уверенность {confidence_percent:.1f}%)
+                            + Визуализация Grad-CAM + Региональный анализ мозга + Медицинская литература
                         </p>
                     </div>
                     <div style='line-height: 1.8; color: #2d3748; font-size: 1.05rem;'>
@@ -1071,36 +1073,36 @@ Based on ALL of the above data (diagnosis, model attention, and detailed regiona
 
             # Final summary
             st.success("""
-                ✅ **Analysis Complete!** All three stages of AI analysis have been completed.
+                ✅ **Анализ завершен!** Все три этапа анализа ИИ завершены.
 
-                You now have:
-                1. ✅ Initial CNN Diagnosis with confidence score
-                2. ✅ Grad-CAM visualization showing AI decision process
-                3. ✅ Detailed brain region analysis from Pixtral AI
-                4. ✅ Comprehensive medical recommendations from Gemini AI
+                Теперь у вас есть:
+                1. ✅ Начальный диагноз CNN с оценкой уверенности
+                2. ✅ Визуализация Grad-CAM, показывающая процесс принятия решения ИИ
+                3. ✅ Детальный анализ областей мозга от Pixtral AI
+                4. ✅ Комплексные медицинские рекомендации от Gemini AI
 
-                **Next Steps:** Print or save this report and discuss with your healthcare provider.
+                **Следующие шаги:** Распечатайте или сохраните этот отчет и обсудите с вашим врачом.
             """, icon="🎉")
     else:
         # Show helpful instructions when no image is uploaded
         st.markdown("""
             <div style='background: white; border-radius: 20px; padding: 3rem; margin: 2rem auto; max-width: 600px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center;'>
                 <div style='font-size: 4rem; margin-bottom: 1rem;'>🔬</div>
-                <h3 style='color: #2d3748; margin-bottom: 1rem;'>Ready to Analyze</h3>
+                <h3 style='color: #2d3748; margin-bottom: 1rem;'>Готов к анализу</h3>
                 <p style='color: #718096; font-size: 1.05rem; line-height: 1.6;'>
-                    Upload an MRI scan above to begin AI-powered Alzheimer's analysis.
-                    Our deep learning model will classify the stage and provide insights.
+                    Загрузите МРТ снимок выше, чтобы начать анализ болезни Альцгеймера с помощью ИИ.
+                    Наша модель глубокого обучения классифицирует стадию и предоставит выводы.
                 </p>
                 <div style='margin-top: 2rem; padding: 1.5rem; background: #f7fafc; border-radius: 12px;'>
                     <p style='margin: 0; color: #4a5568; font-size: 0.95rem;'>
-                        <strong>Supported Formats:</strong> JPG, JPEG, PNG<br>
-                        <strong>Model Accuracy:</strong> 95.47%
+                        <strong>Поддерживаемые форматы:</strong> JPG, JPEG, PNG<br>
+                        <strong>Точность модели:</strong> 95.47%
                     </p>
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
-elif options == 'Virtual Assistant':
+elif options == 'Виртуальный ассистент':
     exec(open("chatbot.py", encoding="utf-8").read())
 
 # Modern Footer
@@ -1114,17 +1116,17 @@ st.markdown("""
                 </strong>
             </div>
             <p style='line-height: 1.8; margin-bottom: 1rem;'>
-                Advanced AI-powered Alzheimer's detection using deep learning and computer vision.<br>
-                Built with PyTorch TinyVGG16 architecture achieving 95.47% accuracy.
+                Продвинутое обнаружение болезни Альцгеймера с помощью ИИ, использующее глубокое обучение и компьютерное зрение.<br>
+                Построено на архитектуре PyTorch TinyVGG16 с точностью 95.47%.
             </p>
             <div style='padding: 1rem; background: #f7fafc; border-radius: 12px; margin: 1.5rem 0;'>
                 <p style='margin: 0; font-size: 0.9rem; color: #4a5568;'>
-                    ⚠️ <strong>Medical Disclaimer:</strong> Results must be interpreted by qualified medical professionals.
-                    This tool is designed to assist, not replace, professional medical judgment.
+                    ⚠️ <strong>Медицинское предупреждение:</strong> Результаты должны быть интерпретированы квалифицированными медицинскими специалистами.
+                    Этот инструмент предназначен для помощи, а не для замены профессионального медицинского суждения.
                 </p>
             </div>
             <p style='margin-top: 2rem; font-size: 0.9rem;'>
-                © 2025 ReMind.AI | Powered by Gemini & Streamlit
+                © 2025 ReMind.AI | На базе Gemini и Streamlit
             </p>
         </div>
     </div>

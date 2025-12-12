@@ -118,12 +118,22 @@ class GradCAM:
         # Convert grayscale to RGB if needed
         if len(original_image.shape) == 2:
             original_image = cv2.cvtColor(original_image, cv2.COLOR_GRAY2RGB)
+        elif original_image.shape[2] == 4:  # RGBA
+            original_image = cv2.cvtColor(original_image, cv2.COLOR_RGBA2RGB)
         elif original_image.shape[2] == 1:
-            original_image = cv2.cvtColor(original_image, cv2.COLOR_GRAY2RGB)
+            original_image = np.repeat(original_image, 3, axis=2)
+
+        # Ensure both images are the same dtype
+        original_image = original_image.astype(np.uint8)
+        heatmap_colored = heatmap_colored.astype(np.uint8)
+
+        # Ensure both images have the same shape
+        if original_image.shape != heatmap_colored.shape:
+            heatmap_colored = cv2.resize(heatmap_colored, (original_image.shape[1], original_image.shape[0]))
 
         # Overlay
         overlayed = cv2.addWeighted(
-            original_image.astype(np.uint8),
+            original_image,
             1 - alpha,
             heatmap_colored,
             alpha,

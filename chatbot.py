@@ -108,17 +108,20 @@ st.markdown(
 )
 
 # Medical instructions template for the model
-MEDICAL_TEMPLATE = """You are a medical assistant specialized in Alzheimer's and neurodegenerative diseases.
-Provide accurate, evidence-based, and easy-to-understand answers.
-Your goal is to help people better understand Alzheimer's and provide useful information.
+MEDICAL_TEMPLATE = """Вы медицинский ассистент, специализирующийся на болезни Альцгеймера и нейродегенеративных заболеваниях.
+ОТВЕЧАЙТЕ ТОЛЬКО НА РУССКОМ ЯЗЫКЕ.
+Предоставляйте точные, основанные на доказательствах и легко понятные ответы.
+Ваша цель - помочь людям лучше понять болезнь Альцгеймера и предоставить полезную информацию.
 
-Remember:
-1. Use clear and accessible language
-2. Base answers on scientific evidence
-3. Include references to studies when relevant
-4. Maintain a professional yet empathetic tone
+Помните:
+1. Используйте ясный и доступный язык
+2. Основывайте ответы на научных доказательствах
+3. Включайте ссылки на исследования, где это уместно
+4. Поддерживайте профессиональный, но эмпатичный тон
 
-User question: {question}"""
+ВАЖНО: ВСЕ ОТВЕТЫ ДОЛЖНЫ БЫТЬ ПОЛНОСТЬЮ НА РУССКОМ ЯЗЫКЕ.
+
+Вопрос пользователя: {question}"""
 
 def init_gemini():
     """
@@ -126,7 +129,7 @@ def init_gemini():
     """
     api_key = os.getenv('GEMINI_API_KEY')
     if not api_key:
-        st.error('⚠️ Gemini API key has not been configured. Please set it as an environment variable.')
+        st.error('⚠️ API ключ Gemini не настроен. Пожалуйста, установите его как переменную окружения.')
         st.stop()
 
     genai.configure(api_key=api_key)
@@ -141,7 +144,7 @@ def get_gemini_response(model, question):
         response = model.generate_content([prompt, question])
         return response.text
     except Exception as e:
-        return f"Error generating response: {str(e)}"
+        return f"Ошибка генерации ответа: {str(e)}"
 
 # Enhanced title and description
 st.markdown(
@@ -150,10 +153,10 @@ st.markdown(
             <h2 style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                        margin-bottom: 0.5rem;'>
-                🤖 AI Medical Assistant
+                🤖 Медицинский ассистент ИИ
             </h2>
             <h4 style='color: #718096; font-weight: 400;'>
-                Specialized Alzheimer's advisor powered by Google Gemini 2.5 Flash
+                Специализированный консультант по болезни Альцгеймера на базе Google Gemini 2.5 Flash
             </h4>
         </div>
     """,
@@ -162,7 +165,7 @@ st.markdown(
 
 # API Key verification
 if not os.getenv('GEMINI_API_KEY'):
-    st.error('⚠️ Gemini API key has not been configured. Please set it as an environment variable.')
+    st.error('⚠️ API ключ Gemini не настроен. Пожалуйста, установите его как переменную окружения.')
     st.stop()
 
 # Initialize chat history
@@ -186,12 +189,12 @@ with col1:
         st.markdown(f"<div class='{css_class}'>{message['content']}</div>", unsafe_allow_html=True)
 
     # User input
-    if prompt := st.chat_input("Type your question about Alzheimer's here"):
+    if prompt := st.chat_input("Введите ваш вопрос о болезни Альцгеймера здесь"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         st.markdown(f"<div class='message-user'>{prompt}</div>", unsafe_allow_html=True)
 
         # Get response from model
-        with st.spinner('Generating response...'):
+        with st.spinner('Генерация ответа...'):
             response = get_gemini_response(st.session_state.model, prompt)
             st.session_state.messages.append({"role": "assistant", "content": response})
             st.markdown(f"<div class='message-assistant'>{response}</div>", unsafe_allow_html=True)
@@ -202,10 +205,10 @@ with col2:
     # Info card with modern design
     st.markdown("""
         <div style='background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 1rem;'>
-            <h4 style='color: #2d3748; margin-bottom: 1rem; font-size: 1.1rem;'>ℹ️ About This Assistant</h4>
+            <h4 style='color: #2d3748; margin-bottom: 1rem; font-size: 1.1rem;'>ℹ️ Об этом ассистенте</h4>
             <p style='color: #4a5568; line-height: 1.6; margin: 0;'>
-                Powered by Google's Gemini 2.5 Flash, this AI assistant provides evidence-based information
-                about Alzheimer's disease and related neurodegenerative conditions.
+                На базе Google Gemini 2.5 Flash, этот ИИ-ассистент предоставляет информацию на основе доказательств
+                о болезни Альцгеймера и связанных нейродегенеративных заболеваниях.
             </p>
         </div>
     """, unsafe_allow_html=True)
@@ -213,16 +216,16 @@ with col2:
     # Topics card
     st.markdown("""
         <div class='info-card'>
-            <h4>💡 Suggested Topics</h4>
+            <h4>💡 Предлагаемые темы</h4>
             <ul style='margin: 0;'>
-                <li>🧠 Symptoms & Diagnosis</li>
-                <li>💊 Treatment Options</li>
-                <li>⚠️ Risk Factors</li>
-                <li>🛡️ Prevention Strategies</li>
-                <li>💝 Caregiver Support</li>
-                <li>🔬 Latest Research</li>
-                <li>📋 Medical Tests</li>
-                <li>🏥 Healthcare Resources</li>
+                <li>🧠 Симптомы и диагностика</li>
+                <li>💊 Варианты лечения</li>
+                <li>⚠️ Факторы риска</li>
+                <li>🛡️ Стратегии профилактики</li>
+                <li>💝 Поддержка ухаживающих</li>
+                <li>🔬 Последние исследования</li>
+                <li>📋 Медицинские тесты</li>
+                <li>🏥 Медицинские ресурсы</li>
             </ul>
         </div>
     """, unsafe_allow_html=True)
@@ -231,14 +234,14 @@ with col2:
 
     # Disclaimer
     st.info(
-        "⚠️ **Medical Disclaimer:** This AI provides general information and educational content. "
-        "It does not replace professional medical advice. Always consult qualified healthcare professionals.",
+        "⚠️ **Медицинское предупреждение:** Этот ИИ предоставляет общую информацию и образовательный контент. "
+        "Он не заменяет профессиональную медицинскую консультацию. Всегда консультируйтесь с квалифицированными медицинскими специалистами.",
         icon="⚠️"
     )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Clear button with modern styling
-    if st.button('🔄 Clear Conversation', use_container_width=True, type="secondary"):
+    if st.button('🔄 Очистить беседу', use_container_width=True, type="secondary"):
         st.session_state.messages = []
         st.rerun()
