@@ -4,7 +4,7 @@ import io
 # Enhanced header
 st.markdown("""
     <div style='text-align: center; padding: 1rem 0 2rem 0;'>
-        <h2 style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        <h2 style='background: linear-gradient(135deg, #FF6B35 0%, #E63946 100%);
                    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                    margin-bottom: 0.5rem;'>
             📋 Информация о пациенте
@@ -141,7 +141,7 @@ if st.session_state.report_generated:
     # Function to convert markdown to HTML
     def markdown_to_html(text):
         # Convert headers
-        text = re.sub(r'### (.+)', r'<h3 style="color: #667eea; font-size: 1.3rem; margin: 1rem 0;">\1</h3>', text)
+        text = re.sub(r'### (.+)', r'<h3 style="background: linear-gradient(135deg, #FF6B35 0%, #E63946 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.3rem; margin: 1rem 0;">\1</h3>', text)
         # Convert bold text
         text = re.sub(r'\*\*(.+?)\*\*', r'<strong style="color: #2d3748;">\1</strong>', text)
         # Convert bullet points
@@ -155,7 +155,7 @@ if st.session_state.report_generated:
     html_content = markdown_to_html(st.session_state.report_content)
 
     st.markdown(f"""
-        <div style='background: #f7fafc; border-radius: 16px; padding: 2rem; border-left: 4px solid #667eea; color: #2d3748; line-height: 1.8; font-size: 1rem;'>
+        <div style='background: #FFF1F2; border-radius: 16px; padding: 2rem; border-left: 4px solid #FF6B35; color: #2d3748; line-height: 1.8; font-size: 1rem;'>
             {html_content}
         </div>
     """, unsafe_allow_html=True)
@@ -177,12 +177,12 @@ if st.session_state.report_generated:
 st.markdown("<br><br>", unsafe_allow_html=True)
 
 st.markdown("""
-    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    <div style='background: linear-gradient(135deg, #FF6B35 0%, #E63946 100%);
                 border-radius: 20px;
                 padding: 2rem;
                 text-align: center;
                 color: white;
-                box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);'>
+                box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);'>
         <h3 style='color: white; margin-bottom: 1rem;'>🔬 Готовы к диагностике?</h3>
         <p style='margin: 0; font-size: 1.05rem; opacity: 0.95;'>
             После заполнения информации о пациенте, перейдите в раздел <strong>Диагностика</strong>

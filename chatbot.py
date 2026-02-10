@@ -21,37 +21,37 @@ st.markdown(
 
         /* User messages */
         .message-user {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #A855F7 0%, #E63946 100%);
             color: white;
             padding: 1rem 1.25rem;
             border-radius: 18px 18px 4px 18px;
             margin: 0.75rem 0;
             margin-left: 20%;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
             animation: slideInRight 0.3s ease;
         }
 
         /* Assistant messages */
         .message-assistant {
-            background: #f7fafc;
+            background: #FEF3F2;
             color: #2d3748;
             padding: 1rem 1.25rem;
             border-radius: 18px 18px 18px 4px;
             margin: 0.75rem 0;
             margin-right: 20%;
-            border-left: 4px solid #667eea;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border-left: 4px solid #A855F7;
+            box-shadow: 0 2px 8px rgba(168, 85, 247, 0.1);
             animation: slideInLeft 0.3s ease;
             line-height: 1.6;
         }
 
         /* Info card styling */
         .info-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #A855F7 0%, #E63946 100%);
             color: white;
             border-radius: 16px;
             padding: 1.5rem;
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.25);
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.3);
         }
 
         .info-card h4 {
@@ -150,7 +150,7 @@ def get_gemini_response(model, question):
 st.markdown(
      """
         <div style='text-align: center; padding: 1rem 0 2rem 0;'>
-            <h2 style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            <h2 style='background: linear-gradient(135deg, #A855F7 0%, #E63946 100%);
                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                        margin-bottom: 0.5rem;'>
                 🤖 Медицинский ассистент ИИ

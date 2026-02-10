@@ -51,7 +51,7 @@ st.markdown(
 
     /* Sidebar Styling */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(180deg, #FF6B35 0%, #E63946 50%, #A855F7 100%);
     }
 
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
@@ -109,11 +109,11 @@ st.markdown(
 
     /* Prediction Box */
     .prediction-box {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 50%, #A855F7 100%);
         border-radius: 20px;
         padding: 2.5rem;
         margin: 2rem 0;
-        box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 20px 60px rgba(6, 182, 212, 0.4);
         text-align: center;
         animation: fadeInUp 0.6s ease;
     }
@@ -143,7 +143,7 @@ st.markdown(
     }
 
     .recommendations-box h2 {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #FF6B35 0%, #E63946 50%, #A855F7 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -153,7 +153,7 @@ st.markdown(
 
     /* Buttons */
     .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
         color: white;
         border: none;
         border-radius: 12px;
@@ -161,14 +161,14 @@ st.markdown(
         font-size: 1.1rem;
         font-weight: 600;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
     .stButton > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+        box-shadow: 0 6px 25px rgba(6, 182, 212, 0.6);
     }
 
     .stButton > button:active {
@@ -178,15 +178,15 @@ st.markdown(
     /* File Uploader */
     [data-testid="stFileUploader"] {
         background: white;
-        border: 2px dashed #667eea;
+        border: 2px dashed #06B6D4;
         border-radius: 16px;
         padding: 2rem;
         transition: all 0.3s ease;
     }
 
     [data-testid="stFileUploader"]:hover {
-        border-color: #764ba2;
-        background: #f8f9ff;
+        border-color: #3B82F6;
+        background: #f0f9ff;
     }
 
     [data-testid="stFileUploader"] section {
@@ -195,7 +195,7 @@ st.markdown(
     }
 
     [data-testid="stFileUploader"] button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
         color: white;
         border-radius: 8px;
         padding: 0.5rem 1.5rem;
@@ -272,7 +272,7 @@ st.markdown(
 
     /* Spinner customization */
     .stSpinner > div {
-        border-top-color: #667eea !important;
+        border-top-color: #06B6D4 !important;
     }
     </style>
     """,
@@ -512,8 +512,8 @@ st.markdown(
     }}
 
     input[type="text"]:focus, input[type="number"]:focus, textarea:focus {{
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+        border-color: #06B6D4 !important;
+        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1) !important;
     }}
 
     /* Input labels */
@@ -543,7 +543,7 @@ st.markdown(
     }}
 
     div[data-baseweb="select"]:hover {{
-        border-color: #667eea !important;
+        border-color: #06B6D4 !important;
     }}
 
     /* Dropdown menu items */
@@ -558,7 +558,7 @@ st.markdown(
 
     /* Selected option in dropdown */
     div[data-baseweb="select"] [aria-selected="true"] {{
-        background-color: #667eea !important;
+        background-color: #06B6D4 !important;
         color: white !important;
     }}
 
