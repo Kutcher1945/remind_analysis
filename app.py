@@ -11,6 +11,43 @@ import io
 import requests
 from gradcam import generate_gradcam_visualization, create_comparison_image
 import numpy as np
+import re
+
+# Markdown to HTML converter for better text rendering
+def md_to_html(text):
+    """Convert markdown text to properly formatted HTML."""
+    if not text:
+        return ""
+
+    # Convert headers (do this before other formatting)
+    text = re.sub(r'^### (.+)$', r'<h3 style="color: #000000; font-size: 1.2rem; margin: 1.5rem 0 0.8rem 0; font-weight: 700;">\1</h3>', text, flags=re.MULTILINE)
+    text = re.sub(r'^## (.+)$', r'<h2 style="color: #000000; font-size: 1.5rem; margin: 1.8rem 0 1rem 0; font-weight: 700;">\1</h2>', text, flags=re.MULTILINE)
+    text = re.sub(r'^# (.+)$', r'<h1 style="color: #000000; font-size: 1.8rem; margin: 2rem 0 1rem 0; font-weight: 700;">\1</h1>', text, flags=re.MULTILINE)
+
+    # Convert bold text (**text**)
+    text = re.sub(r'\*\*(.+?)\*\*', r'<strong style="color: #000000; font-weight: 700;">\1</strong>', text)
+
+    # Convert italic (*text*) - but not if it's part of **
+    text = re.sub(r'(?<!\*)\*(?!\*)([^*]+?)(?<!\*)\*(?!\*)', r'<em>\1</em>', text)
+
+    # Convert horizontal rules (thick decorative lines)
+    text = re.sub(r'^━{10,}$', '<hr style="border: none; border-top: 3px solid #000000; margin: 1.5rem 0; opacity: 0.8;">', text, flags=re.MULTILINE)
+    text = re.sub(r'^-{3,}$', '<hr style="border: none; border-top: 1px solid #cccccc; margin: 1.5rem 0;">', text, flags=re.MULTILINE)
+
+    # Convert bullet points (•, -, *)
+    text = re.sub(r'^[•\-\*] (.+)$', r'<div style="margin-left: 1.5rem; padding: 0.4rem 0; color: #2d3748; line-height: 1.6;"><span style="color: #000000; font-weight: 600;">•</span> \1</div>', text, flags=re.MULTILINE)
+
+    # Convert numbered lists (1., 2., etc.) with Roman numerals support
+    text = re.sub(r'^([IVX]+)\. (.+)$', r'<div style="margin: 1rem 0 0.5rem 0; padding: 0.5rem 0; color: #000000; font-size: 1.1rem;"><strong>\1.</strong> \2</div>', text, flags=re.MULTILINE)
+    text = re.sub(r'^(\d+)\. (.+)$', r'<div style="margin-left: 1.5rem; padding: 0.4rem 0; color: #2d3748;"><strong style="color: #000000;">\1.</strong> \2</div>', text, flags=re.MULTILINE)
+
+    # Convert line breaks
+    text = text.replace('\n', '<br>')
+
+    # Clean up excessive breaks
+    text = re.sub(r'(<br>){4,}', '<br><br>', text)
+
+    return text
 
 # Load environment variables
 load_dotenv()
@@ -18,7 +55,7 @@ load_dotenv()
 # Configure Gemini API Key
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    st.error("⚠️ API ключ Gemini не настроен. Проверьте ваш файл .env или определите ключ в коде.")
+    st.error("API ключ Gemini не настроен. Проверьте ваш файл .env или определите ключ в коде.")
     st.stop()
 
 # Configure Gemini
@@ -51,7 +88,7 @@ st.markdown(
 
     /* Sidebar Styling */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #FF6B35 0%, #E63946 50%, #A855F7 100%);
+        background: #000000;
     }
 
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
@@ -96,24 +133,24 @@ st.markdown(
     }
 
     h2 {
-        color: #1a1a2e !important;
+        color: #000000 !important;
         font-size: 2.5rem !important;
         margin-bottom: 0.5rem !important;
     }
 
     h4 {
-        color: #4a5568 !important;
+        color: #555555 !important;
         font-weight: 400 !important;
         font-size: 1.1rem !important;
     }
 
     /* Prediction Box */
     .prediction-box {
-        background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 50%, #A855F7 100%);
+        background: #000000;
         border-radius: 20px;
         padding: 2.5rem;
         margin: 2rem 0;
-        box-shadow: 0 20px 60px rgba(6, 182, 212, 0.4);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         text-align: center;
         animation: fadeInUp 0.6s ease;
     }
@@ -132,6 +169,10 @@ st.markdown(
         text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
+    .prediction-box strong {
+        color: white !important;
+    }
+
     /* Recommendations Box */
     .recommendations-box {
         background: white;
@@ -142,18 +183,33 @@ st.markdown(
         border: 1px solid #e2e8f0;
     }
 
+    .recommendations-box h1,
+    .recommendations-box h2,
+    .recommendations-box h3 {
+        color: #000000 !important;
+        font-weight: 700 !important;
+    }
+
     .recommendations-box h2 {
-        background: linear-gradient(135deg, #FF6B35 0%, #E63946 50%, #A855F7 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
         font-size: 2rem !important;
         margin-bottom: 1.5rem !important;
     }
 
+    .recommendations-box strong {
+        color: #000000 !important;
+        font-weight: 700 !important;
+    }
+
+    .recommendations-box hr {
+        border: none !important;
+        border-top: 3px solid #000000 !important;
+        margin: 1.5rem 0 !important;
+        opacity: 0.8 !important;
+    }
+
     /* Buttons */
     .stButton > button {
-        background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+        background: #000000;
         color: white;
         border: none;
         border-radius: 12px;
@@ -161,32 +217,41 @@ st.markdown(
         font-size: 1.1rem;
         font-weight: 600;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
     .stButton > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 25px rgba(6, 182, 212, 0.6);
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.5);
+        background: #333333;
     }
 
     .stButton > button:active {
         transform: translateY(0);
     }
 
+    .stButton > button:disabled {
+        background: #e5e5e5 !important;
+        color: #999999 !important;
+        box-shadow: none !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+    }
+
     /* File Uploader */
     [data-testid="stFileUploader"] {
         background: white;
-        border: 2px dashed #06B6D4;
+        border: 2px dashed #000000;
         border-radius: 16px;
         padding: 2rem;
         transition: all 0.3s ease;
     }
 
     [data-testid="stFileUploader"]:hover {
-        border-color: #3B82F6;
-        background: #f0f9ff;
+        border-color: #333333;
+        background: #f5f5f5;
     }
 
     [data-testid="stFileUploader"] section {
@@ -195,11 +260,40 @@ st.markdown(
     }
 
     [data-testid="stFileUploader"] button {
-        background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
-        color: white;
-        border-radius: 8px;
-        padding: 0.5rem 1.5rem;
-        border: none;
+        background: #000000 !important;
+        color: white !important;
+        border-radius: 8px !important;
+        padding: 0.5rem 1.5rem !important;
+        border: 1px solid #000000 !important;
+    }
+
+    /* File uploader internal text visibility */
+    [data-testid="stFileUploader"] * {
+        color: #333333 !important;
+    }
+
+    [data-testid="stFileUploader"] button,
+    [data-testid="stFileUploader"] button * {
+        color: white !important;
+    }
+
+    [data-testid="stFileUploader"] button svg {
+        stroke: white !important;
+        fill: none !important;
+    }
+
+    [data-testid="stFileUploader"] button svg line,
+    [data-testid="stFileUploader"] button svg path,
+    [data-testid="stFileUploader"] button svg polyline {
+        stroke: white !important;
+    }
+
+    [data-testid="stFileUploader"] small {
+        color: #666666 !important;
+    }
+
+    [data-testid="stFileUploader"] svg {
+        fill: #333333 !important;
     }
 
     /* Image container */
@@ -223,7 +317,7 @@ st.markdown(
 
     .image-label {
         margin-top: 1rem;
-        color: #4a5568;
+        color: #333333;
         font-weight: 500;
         font-size: 1rem;
     }
@@ -233,6 +327,11 @@ st.markdown(
         border-radius: 12px;
         border: none;
         box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    .stAlert p, .stAlert span, .stAlert div {
+        color: #000000 !important;
+        font-weight: 600 !important;
     }
 
     /* Animations */
@@ -261,18 +360,55 @@ st.markdown(
         text-align: center;
         padding: 2rem;
         margin-top: 4rem;
-        border-top: 1px solid #e2e8f0;
-        color: #718096;
+        border-top: 1px solid #cccccc;
+        color: #555555;
     }
 
     .footer strong {
-        color: #2d3748;
+        color: #000000;
         font-size: 1.1rem;
     }
 
     /* Spinner customization */
     .stSpinner > div {
-        border-top-color: #06B6D4 !important;
+        border-top-color: #000000 !important;
+    }
+
+    /* Spinner container and all elements must be visible */
+    .stSpinner,
+    [data-testid="stSpinner"],
+    .stSpinner > div,
+    [data-testid="stSpinner"] > div {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    /* Spinner text - comprehensive targeting */
+    .stSpinner,
+    .stSpinner *,
+    [data-testid="stSpinner"],
+    [data-testid="stSpinner"] *,
+    div[data-testid="stSpinner"] + div,
+    div[data-testid="stSpinner"] + div *,
+    .stSpinner ~ div,
+    .stSpinner ~ div *,
+    [class*="spinner"] *,
+    [class*="Spinner"] * {
+        color: #000000 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    /* Ensure spinner text elements have proper styling */
+    .stSpinner p,
+    .stSpinner span,
+    .stSpinner div,
+    [data-testid="stSpinner"] p,
+    [data-testid="stSpinner"] span,
+    [data-testid="stSpinner"] div {
+        color: #000000 !important;
+        font-weight: 600 !important;
+        font-size: 1.05rem !important;
     }
     </style>
     """,
@@ -361,7 +497,7 @@ def validate_mri_image(image_base64):
             return False, f"Ошибка сервиса валидации (Статус {response.status_code})", "НИЗКАЯ"
 
     except Exception as e:
-        st.warning(f"⚠️ Не удалось проверить изображение: {str(e)}. Продолжаем с осторожностью...")
+        st.warning(f"Не удалось проверить изображение: {str(e)}. Продолжаем с осторожностью...")
         return True, "Проверка пропущена из-за ошибки", "НИЗКАЯ"
 
 
@@ -394,25 +530,25 @@ def analyze_brain_regions(image_base64, predicted_class, confidence_percent):
 
 **Форматируйте ваш ответ так:**
 
-🧠 РЕГИОНАЛЬНЫЙ АНАЛИЗ
+РЕГИОНАЛЬНЫЙ АНАЛИЗ
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📍 Гиппокамп и медиальная височная доля:
+- Гиппокамп и медиальная височная доля:
 [Ваши детальные находки]
 
-📍 Желудочковая система:
+- Желудочковая система:
 [Ваши детальные находки]
 
-📍 Корковые области:
+- Корковые области:
 [Ваши детальные находки]
 
-📍 Белое вещество:
+- Белое вещество:
 [Ваши детальные находки]
 
-📍 Общая оценка:
+- Общая оценка:
 [Резюме ключевых находок]
 
-🎯 КОРРЕЛЯЦИЯ С ПРОГНОЗОМ ИИ:
+КОРРЕЛЯЦИЯ С ПРОГНОЗОМ ИИ:
 [Как ваши находки подтверждают или противоречат прогнозу ИИ "{predicted_class}"]
 
 **Важно:** Будьте конкретны относительно локализации (левое/правое полушарие, передний/задний отдел и т.д.) и тяжести (легкая/умеренная/тяжелая).
@@ -497,7 +633,7 @@ st.markdown(
     <style>
     /* Background with subtle gradient overlay */
     .stApp {{
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        background: #ffffff;
         background-attachment: fixed;
     }}
 
@@ -512,8 +648,8 @@ st.markdown(
     }}
 
     input[type="text"]:focus, input[type="number"]:focus, textarea:focus {{
-        border-color: #06B6D4 !important;
-        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1) !important;
+        border-color: #000000 !important;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
     }}
 
     /* Input labels */
@@ -543,7 +679,7 @@ st.markdown(
     }}
 
     div[data-baseweb="select"]:hover {{
-        border-color: #06B6D4 !important;
+        border-color: #000000 !important;
     }}
 
     /* Dropdown menu items */
@@ -558,7 +694,7 @@ st.markdown(
 
     /* Selected option in dropdown */
     div[data-baseweb="select"] [aria-selected="true"] {{
-        background-color: #06B6D4 !important;
+        background-color: #000000 !important;
         color: white !important;
     }}
 
@@ -696,8 +832,8 @@ elif options == 'Диагностика':
     # Header with modern design
     st.markdown("""
         <div style='text-align: center; padding: 1rem 0 2rem 0;'>
-            <h2 style='margin-bottom: 0.5rem;'>🧠 Диагностика на основе ИИ</h2>
-            <h4 style='color: #718096; font-weight: 400;'>
+            <h2 style='margin-bottom: 0.5rem;'>Диагностика на основе ИИ</h2>
+            <h4 style='color: #555555; font-weight: 400;'>
                 Продвинутая классификация болезни Альцгеймера с использованием глубокого обучения и анализа МРТ
             </h4>
         </div>
@@ -706,8 +842,8 @@ elif options == 'Диагностика':
     # Image upload section with modern card design
     st.markdown("""
         <div style='text-align: center; margin-bottom: 1.5rem;'>
-            <p style='font-size: 1.1rem; color: #4a5568;'>
-                📸 Загрузите МРТ снимок для начала анализа
+            <p style='font-size: 1.1rem; color: #333333;'>
+                Загрузите МРТ снимок для начала анализа
             </p>
         </div>
     """, unsafe_allow_html=True)
@@ -735,20 +871,20 @@ elif options == 'Диагностика':
                 <div class='image-container'>
                     <img src='{image_base64}'
                          style='max-width: 100%; width: 500px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.15);'>
-                    <p class='image-label'>📤 Image Uploaded</p>
+                    <p class='image-label'>Image Uploaded</p>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
         # STAGE 1: Validate image using Pixtral AI
-        with st.spinner('🔍 Проверка изображения с помощью Pixtral AI...'):
+        with st.spinner('Проверка изображения с помощью Pixtral AI...'):
             is_valid, reason, confidence = validate_mri_image(image_base64)
 
         if not is_valid:
             # Image is NOT a brain MRI - show error
             st.error(f"""
-            ❌ **Обнаружено недействительное изображение**
+            **Обнаружено недействительное изображение**
 
             Это не похоже на МРТ снимок головного мозга.
 
@@ -767,10 +903,10 @@ elif options == 'Диагностика':
             st.stop()  # Stop execution - don't proceed to prediction
         else:
             # Image validated successfully
-            st.success(f"✅ **Изображение проверено:** {reason} (Уверенность: {confidence})")
+            st.success(f"**Изображение проверено:** {reason} (Уверенность: {confidence})")
 
         # STAGE 2: Processing and prediction with loading animation
-        with st.spinner('🔬 Анализ МРТ снимка с помощью модели ИИ...'):
+        with st.spinner('Анализ МРТ снимка с помощью модели ИИ...'):
             input_image = transform(image).unsqueeze(0)
 
             with torch.no_grad():
@@ -788,7 +924,7 @@ elif options == 'Диагностика':
         # Display prediction with enhanced design
         st.markdown(f"""
             <div class='prediction-box'>
-                <h3>🎯 Результат диагностики</h3>
+                <h3>Результат диагностики</h3>
                 <p style='font-size: 2rem; margin: 1.5rem 0;'>{predicted_class}</p>
                 <div style='background: rgba(255,255,255,0.2); border-radius: 12px; padding: 1rem; margin-top: 1rem;'>
                     <p style='font-size: 1rem; margin: 0; opacity: 0.9;'>
@@ -802,8 +938,8 @@ elif options == 'Диагностика':
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("""
             <div style='text-align: center; margin: 2rem 0 1rem 0;'>
-                <h3 style='color: #2d3748;'>🔍 Визуализация внимания модели ИИ (Grad-CAM)</h3>
-                <p style='color: #718096; font-size: 0.95rem;'>
+                <h3 style='color: #000000;'>Визуализация внимания модели ИИ (Grad-CAM)</h3>
+                <p style='color: #555555; font-size: 0.95rem;'>
                     Тепловая карта показывает, на какие области мозга ИИ обратил внимание при прогнозировании
                 </p>
             </div>
@@ -812,19 +948,19 @@ elif options == 'Диагностика':
         # Display three images side by side
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.markdown("<p style='text-align: center; font-weight: 500; color: #4a5568;'>Оригинальное МРТ</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; font-weight: 500; color: #333333;'>Оригинальное МРТ</p>", unsafe_allow_html=True)
             st.image(image, use_container_width=True)
         with col2:
-            st.markdown("<p style='text-align: center; font-weight: 500; color: #4a5568;'>Тепловая карта Grad-CAM</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; font-weight: 500; color: #333333;'>Тепловая карта Grad-CAM</p>", unsafe_allow_html=True)
             st.image(gradcam_results['heatmap_only'], use_container_width=True)
         with col3:
-            st.markdown("<p style='text-align: center; font-weight: 500; color: #4a5568;'>Комбинированный вид</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; font-weight: 500; color: #333333;'>Комбинированный вид</p>", unsafe_allow_html=True)
             st.image(gradcam_results['overlayed'], use_container_width=True)
 
         st.markdown("""
-            <div style='background: #f7fafc; border-left: 4px solid #667eea; padding: 1rem; margin: 1rem 0; border-radius: 8px;'>
-                <p style='margin: 0; color: #4a5568; font-size: 0.9rem;'>
-                    <strong>📊 Как читать:</strong> Красные/желтые области указывают на регионы, на которых сосредоточился ИИ.
+            <div style='background: #f5f5f5; border-left: 4px solid #000000; padding: 1rem; margin: 1rem 0; border-radius: 8px;'>
+                <p style='margin: 0; color: #333333; font-size: 0.9rem;'>
+                    <strong>Как читать:</strong> Красные/желтые области указывают на регионы, на которых сосредоточился ИИ.
                     Более горячие цвета (красный) = большее внимание, более холодные цвета (синий) = меньшее внимание.
                 </p>
             </div>
@@ -844,36 +980,36 @@ elif options == 'Диагностика':
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("""
             <div style='text-align: center; margin: 2rem 0 1rem 0;'>
-                <h3 style='color: #2d3748;'>📋 Многоэтапный конвейер анализа ИИ</h3>
-                <p style='color: #718096; font-size: 0.95rem;'>
+                <h3 style='color: #000000;'>Многоэтапный конвейер анализа ИИ</h3>
+                <p style='color: #555555; font-size: 0.95rem;'>
                     Завершите каждый этап для получения комплексных медицинских заключений
                 </p>
             </div>
         """, unsafe_allow_html=True)
 
         # Progress bar
-        progress_steps = ["✅ Диагностика завершена", "⏳ Региональный анализ", "⏳ Финальные рекомендации"]
+        progress_steps = ["[Done] Диагностика завершена", "[Pending] Региональный анализ", "[Pending] Финальные рекомендации"]
         if st.session_state.analysis_step >= 1:
-            progress_steps[1] = "✅ Региональный анализ завершен"
+            progress_steps[1] = "[Done] Региональный анализ завершен"
         if st.session_state.analysis_step >= 2:
-            progress_steps[2] = "✅ Финальные рекомендации завершены"
+            progress_steps[2] = "[Done] Финальные рекомендации завершены"
 
         cols = st.columns(3)
         for i, (col, step) in enumerate(zip(cols, progress_steps)):
             with col:
-                if "✅" in step:
+                if "[Done]" in step:
                     st.markdown(f"""
-                        <div style='background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                        <div style='background: #000000;
                                     color: white; padding: 1rem; border-radius: 12px; text-align: center;
-                                    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);'>
-                            <strong>{step}</strong>
+                                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);'>
+                            <strong>{step.replace('[Done] ', '')}</strong>
                         </div>
                     """, unsafe_allow_html=True)
-                elif "⏳" in step:
+                elif "[Pending]" in step:
                     st.markdown(f"""
-                        <div style='background: #f3f4f6; color: #6b7280; padding: 1rem;
-                                    border-radius: 12px; text-align: center; border: 2px dashed #d1d5db;'>
-                            <strong>{step}</strong>
+                        <div style='background: #f5f5f5; color: #333333; padding: 1rem;
+                                    border-radius: 12px; text-align: center; border: 2px dashed #999999;'>
+                            <strong>{step.replace('[Pending] ', '')}</strong>
                         </div>
                     """, unsafe_allow_html=True)
 
@@ -886,7 +1022,7 @@ elif options == 'Диагностика':
         with col2:
             step2_disabled = st.session_state.analysis_step >= 1
             get_detailed_analysis = st.button(
-                "🔬 Этап 2: Получить детальный анализ областей мозга",
+                "Этап 2: Получить детальный анализ областей мозга",
                 use_container_width=True,
                 disabled=step2_disabled,
                 type="primary" if not step2_disabled else "secondary"
@@ -894,26 +1030,29 @@ elif options == 'Диагностика':
 
         if get_detailed_analysis or st.session_state.analysis_step >= 1:
             if get_detailed_analysis:
-                with st.spinner("🧠 Анализ областей мозга с помощью Pixtral AI... Это может занять 5-10 секунд..."):
+                with st.spinner("Анализ областей мозга с помощью Pixtral AI... Это может занять 5-10 секунд..."):
                     brain_analysis = analyze_brain_regions(image_base64, predicted_class, confidence_percent)
                     st.session_state.brain_analysis_result = brain_analysis
                     st.session_state.analysis_step = 1
 
             # Display the analysis
             st.markdown(f"""
-                <div style='background: white; border-radius: 20px; padding: 2rem; margin: 2rem 0;
-                            box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 2px solid #10b981;'>
-                    <div style='color: #2d3748; line-height: 1.8;'>
-                        {st.session_state.brain_analysis_result.replace(chr(10), '<br>')}
+                <div style='background: white; border-radius: 20px; padding: 2.5rem; margin: 2rem 0;
+                            box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 3px solid #000000;'>
+                    <h2 style='color: #000000; font-size: 1.8rem; margin-bottom: 1.5rem; text-align: center; font-weight: 700;'>
+                        Региональный анализ областей мозга
+                    </h2>
+                    <div style='color: #2d3748; line-height: 1.9; font-size: 1.05rem;'>
+                        {md_to_html(st.session_state.brain_analysis_result)}
                     </div>
                 </div>
             """, unsafe_allow_html=True)
 
             # Important disclaimer
             st.info("""
-                ℹ️ **Анализ завершен!** Региональные находки зафиксированы.
+                **Анализ завершен.** Региональные находки зафиксированы.
                 Переходите к Этапу 3 для получения комплексных рекомендаций по лечению.
-            """, icon="✅")
+            """)
 
         # ===================================================================
         # STEP 3: COMPREHENSIVE MEDICAL RECOMMENDATIONS (Uses ALL Data)
@@ -946,51 +1085,51 @@ elif options == 'Диагностика':
 
 **ФОРМАТИРУЙТЕ ВАШ ОТВЕТ ТАК:**
 
-📋 КОМПЛЕКСНЫЙ ПЛАН МЕДИЦИНСКИХ ДЕЙСТВИЙ
+КОМПЛЕКСНЫЙ ПЛАН МЕДИЦИНСКИХ ДЕЙСТВИЙ
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🏥 НЕМЕДЛЕННЫЕ СЛЕДУЮЩИЕ ШАГИ
+I. НЕМЕДЛЕННЫЕ СЛЕДУЮЩИЕ ШАГИ
 • [Срочные действия, требуемые в течение 1-2 недель]
 • [Необходимые направления к специалистам]
 • [Дополнительные диагностические тесты для назначения]
 
-💊 РЕКОМЕНДАЦИИ ПО ЛЕЧЕНИЮ
+II. РЕКОМЕНДАЦИИ ПО ЛЕЧЕНИЮ
 • [Варианты медикаментов на основе тяжести]
 • [Соображения по дозировке]
 • [Ожидаемые результаты и мониторинг]
 
-🧠 КОГНИТИВНЫЕ ВМЕШАТЕЛЬСТВА
+III. КОГНИТИВНЫЕ ВМЕШАТЕЛЬСТВА
 • [Программы когнитивных тренировок]
 • [Упражнения для памяти]
 • [Активности для здоровья мозга]
 
-🥗 МОДИФИКАЦИИ ОБРАЗА ЖИЗНИ
+IV. МОДИФИКАЦИИ ОБРАЗА ЖИЗНИ
 • [Диетические рекомендации (средиземноморская диета и т.д.)]
 • [Режим упражнений (аэробные + силовые тренировки)]
 • [Улучшения гигиены сна]
 • [Техники управления стрессом]
 
-👥 СОЦИАЛЬНЫЕ МЕРЫ И ПОДДЕРЖКА
+V. СОЦИАЛЬНЫЕ МЕРЫ И ПОДДЕРЖКА
 • [Обучение ухаживающих и группы поддержки]
 • [Активности социального взаимодействия]
 • [Планирование безопасности дома]
 
-📊 ПЛАН МОНИТОРИНГА
+VI. ПЛАН МОНИТОРИНГА
 • [График последующих визуализаций (например, МРТ каждые 6-12 месяцев)]
 • [Частота когнитивной оценки]
 • [Ключевые биомаркеры для отслеживания]
 
-🎯 КОРРЕЛЯЦИЯ С НАХОДКАМИ ИИ
+VII. КОРРЕЛЯЦИЯ С НАХОДКАМИ ИИ
 • [Как региональные находки мозга коррелируют с рекомендованным лечением]
 • [Почему конкретные вмешательства нацелены на пораженные области]
 • [Ожидаемое прогрессирование на основе текущих находок]
 
-⚠️ ТРЕВОЖНЫЕ ПРИЗНАКИ ДЛЯ НАБЛЮДЕНИЯ
+VIII. ТРЕВОЖНЫЕ ПРИЗНАКИ ДЛЯ НАБЛЮДЕНИЯ
 • [Симптомы, требующие немедленной медицинской помощи]
 • [Признаки быстрого прогрессирования]
 • [Побочные эффекты медикаментов для мониторинга]
 
-🔬 ИССЛЕДОВАНИЯ И КЛИНИЧЕСКИЕ ИСПЫТАНИЯ
+IX. ИССЛЕДОВАНИЯ И КЛИНИЧЕСКИЕ ИСПЫТАНИЯ
 • [Релевантные текущие испытания для этой стадии]
 • [Развивающиеся терапии для обсуждения с неврологом]
 
@@ -1011,7 +1150,7 @@ elif options == 'Диагностика':
         with col2:
             step3_disabled = st.session_state.analysis_step < 1
             get_recommendations = st.button(
-                "🩺 Этап 3: Получить комплексные медицинские рекомендации",
+                "Этап 3: Получить комплексные медицинские рекомендации",
                 use_container_width=True,
                 disabled=step3_disabled,
                 type="primary" if not step3_disabled else "secondary",
@@ -1019,7 +1158,7 @@ elif options == 'Диагностика':
             )
 
         if get_recommendations:
-            with st.spinner("🤖 Синтез комплексных медицинских рекомендаций из всех источников данных... Это может занять 10-15 секунд..."):
+            with st.spinner("Синтез комплексных медицинских рекомендаций из всех источников данных... Это может занять 10-15 секунд..."):
                 recommendations = get_comprehensive_recommendations(
                     diagnosis=predicted_class,
                     confidence=confidence_percent,
@@ -1030,71 +1169,70 @@ elif options == 'Диагностика':
 
             # Display comprehensive disclaimer
             st.warning("""
-                ⚠️ **КРИТИЧЕСКОЕ МЕДИЦИНСКОЕ ПРЕДУПРЕЖДЕНИЕ**
+                **КРИТИЧЕСКОЕ МЕДИЦИНСКОЕ ПРЕДУПРЕЖДЕНИЕ**
 
                 Этот комплексный анализ интегрирует:
-                - ✅ Диагноз CNN модели (точность 95.47% на тестовых данных)
-                - ✅ Визуализация внимания Grad-CAM (прозрачность решений ИИ)
-                - ✅ Региональный анализ мозга Pixtral (радиологическая интерпретация ИИ)
-                - ✅ Медицинские знания Gemini (рекомендации на основе доказательств)
+                - Диагноз CNN модели (точность 95.47% на тестовых данных)
+                - Визуализация внимания Grad-CAM (прозрачность решений ИИ)
+                - Региональный анализ мозга Pixtral (радиологическая интерпретация ИИ)
+                - Медицинские знания Gemini (рекомендации на основе доказательств)
 
                 **ОДНАКО:**
-                - ❌ Это НЕ клинический диагноз
-                - ❌ Это НЕ заменяет невролога, радиолога или врача
-                - ❌ Это НЕ одобрено FDA для клинических решений
-                - ❌ ИИ может делать ошибки и может галлюцинировать находки
+                - Это НЕ клинический диагноз
+                - Это НЕ заменяет невролога, радиолога или врача
+                - Это НЕ одобрено FDA для клинических решений
+                - ИИ может делать ошибки и может галлюцинировать находки
 
                 **ОБЯЗАТЕЛЬНЫЕ ДЕЙСТВИЯ:**
-                - ✅ Поделитесь этими результатами с квалифицированным медицинским работником
-                - ✅ Получите профессиональную радиологическую интерпретацию МРТ
-                - ✅ Пройдите комплексную неврологическую оценку
-                - ✅ Следуйте рекомендациям вашего врача, а не только предложениям ИИ
+                - Поделитесь этими результатами с квалифицированным медицинским работником
+                - Получите профессиональную радиологическую интерпретацию МРТ
+                - Пройдите комплексную неврологическую оценку
+                - Следуйте рекомендациям вашего врача, а не только предложениям ИИ
 
                 **Этот инструмент предназначен для ПОМОЩИ медицинским специалистам, а не для их замены.**
-            """, icon="⚠️")
+            """)
 
             # Display recommendations with modern design
             st.markdown(f"""
-                <div class='recommendations-box' style='border: 3px solid #667eea;'>
-                    <h2 style='text-align: center; margin-bottom: 2rem;'>
-                        💊 Комплексный план медицинских действий
+                <div class='recommendations-box' style='border: 3px solid #000000;'>
+                    <h2 style='text-align: center; margin-bottom: 2rem; color: #000000; font-size: 2rem; font-weight: 700;'>
+                        Комплексный план медицинских действий
                     </h2>
-                    <div style='background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;'>
-                        <p style='margin: 0; color: #1e40af; font-size: 0.95rem;'>
-                            <strong>📊 Использованные источники данных:</strong> Диагноз CNN ({predicted_class}, уверенность {confidence_percent:.1f}%)
+                    <div style='background: #000000; padding: 1.2rem; border-radius: 10px; margin-bottom: 2rem;'>
+                        <p style='margin: 0; color: #ffffff; font-size: 0.95rem; line-height: 1.6;'>
+                            <strong style='font-weight: 700;'>Использованные источники данных:</strong> Диагноз CNN ({predicted_class}, уверенность {confidence_percent:.1f}%)
                             + Визуализация Grad-CAM + Региональный анализ мозга + Медицинская литература
                         </p>
                     </div>
-                    <div style='line-height: 1.8; color: #2d3748; font-size: 1.05rem;'>
-                        {recommendations.replace(chr(10), '<br>')}
+                    <div style='line-height: 1.9; color: #2d3748; font-size: 1.05rem;'>
+                        {md_to_html(recommendations)}
                     </div>
                 </div>
             """, unsafe_allow_html=True)
 
             # Final summary
             st.success("""
-                ✅ **Анализ завершен!** Все три этапа анализа ИИ завершены.
+                **Анализ завершен.** Все три этапа анализа ИИ завершены.
 
                 Теперь у вас есть:
-                1. ✅ Начальный диагноз CNN с оценкой уверенности
-                2. ✅ Визуализация Grad-CAM, показывающая процесс принятия решения ИИ
-                3. ✅ Детальный анализ областей мозга от Pixtral AI
-                4. ✅ Комплексные медицинские рекомендации от Gemini AI
+                1. Начальный диагноз CNN с оценкой уверенности
+                2. Визуализация Grad-CAM, показывающая процесс принятия решения ИИ
+                3. Детальный анализ областей мозга от Pixtral AI
+                4. Комплексные медицинские рекомендации от Gemini AI
 
-                **Следующие шаги:** Распечатайте или сохраните этот отчет и обсудите с вашим врачом.
-            """, icon="🎉")
+                **Следующие шаги:** Распечатайте или сохраните этот отчет.
+            """)
     else:
         # Show helpful instructions when no image is uploaded
         st.markdown("""
-            <div style='background: white; border-radius: 20px; padding: 3rem; margin: 2rem auto; max-width: 600px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center;'>
-                <div style='font-size: 4rem; margin-bottom: 1rem;'>🔬</div>
-                <h3 style='color: #2d3748; margin-bottom: 1rem;'>Готов к анализу</h3>
-                <p style='color: #718096; font-size: 1.05rem; line-height: 1.6;'>
+            <div style='background: white; border-radius: 20px; padding: 3rem; margin: 2rem auto; max-width: 600px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; border: 1px solid #e0e0e0;'>
+                <h3 style='color: #000000; margin-bottom: 1rem;'>Готов к анализу</h3>
+                <p style='color: #555555; font-size: 1.05rem; line-height: 1.6;'>
                     Загрузите МРТ снимок выше, чтобы начать анализ болезни Альцгеймера с помощью ИИ.
                     Наша модель глубокого обучения классифицирует стадию и предоставит выводы.
                 </p>
-                <div style='margin-top: 2rem; padding: 1.5rem; background: #f7fafc; border-radius: 12px;'>
-                    <p style='margin: 0; color: #4a5568; font-size: 0.95rem;'>
+                <div style='margin-top: 2rem; padding: 1.5rem; background: #f5f5f5; border-radius: 12px;'>
+                    <p style='margin: 0; color: #333333; font-size: 0.95rem;'>
                         <strong>Поддерживаемые форматы:</strong> JPG, JPEG, PNG<br>
                         <strong>Точность модели:</strong> 95.47%
                     </p>
@@ -1110,8 +1248,7 @@ st.markdown("""
     <div class='footer'>
         <div style='max-width: 800px; margin: 0 auto;'>
             <div style='margin-bottom: 1.5rem;'>
-                <strong style='font-size: 1.2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;'>
+                <strong style='font-size: 1.2rem; color: #000000;'>
                     ReMind.AI
                 </strong>
             </div>
@@ -1119,9 +1256,9 @@ st.markdown("""
                 Продвинутое обнаружение болезни Альцгеймера с помощью ИИ, использующее глубокое обучение и компьютерное зрение.<br>
                 Построено на архитектуре PyTorch TinyVGG16 с точностью 95.47%.
             </p>
-            <div style='padding: 1rem; background: #f7fafc; border-radius: 12px; margin: 1.5rem 0;'>
-                <p style='margin: 0; font-size: 0.9rem; color: #4a5568;'>
-                    ⚠️ <strong>Медицинское предупреждение:</strong> Результаты должны быть интерпретированы квалифицированными медицинскими специалистами.
+            <div style='padding: 1rem; background: #f5f5f5; border-radius: 12px; margin: 1.5rem 0;'>
+                <p style='margin: 0; font-size: 0.9rem; color: #333333;'>
+                    <strong>Медицинское предупреждение:</strong> Результаты должны быть интерпретированы квалифицированными медицинскими специалистами.
                     Этот инструмент предназначен для помощи, а не для замены профессионального медицинского суждения.
                 </p>
             </div>

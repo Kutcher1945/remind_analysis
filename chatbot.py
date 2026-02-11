@@ -21,37 +21,37 @@ st.markdown(
 
         /* User messages */
         .message-user {
-            background: linear-gradient(135deg, #A855F7 0%, #E63946 100%);
+            background: #000000;
             color: white;
             padding: 1rem 1.25rem;
             border-radius: 18px 18px 4px 18px;
             margin: 0.75rem 0;
             margin-left: 20%;
-            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             animation: slideInRight 0.3s ease;
         }
 
         /* Assistant messages */
         .message-assistant {
-            background: #FEF3F2;
-            color: #2d3748;
+            background: #f5f5f5;
+            color: #000000;
             padding: 1rem 1.25rem;
             border-radius: 18px 18px 18px 4px;
             margin: 0.75rem 0;
             margin-right: 20%;
-            border-left: 4px solid #A855F7;
-            box-shadow: 0 2px 8px rgba(168, 85, 247, 0.1);
+            border-left: 4px solid #000000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             animation: slideInLeft 0.3s ease;
             line-height: 1.6;
         }
 
         /* Info card styling */
         .info-card {
-            background: linear-gradient(135deg, #A855F7 0%, #E63946 100%);
+            background: #000000;
             color: white;
             border-radius: 16px;
             padding: 1.5rem;
-            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
         }
 
         .info-card h4 {
@@ -99,7 +99,7 @@ st.markdown(
 
         /* Chat input styling */
         .stChatInputContainer {
-            border-top: 2px solid #e2e8f0;
+            border-top: 2px solid #cccccc;
             padding-top: 1rem;
         }
     </style>
@@ -129,7 +129,7 @@ def init_gemini():
     """
     api_key = os.getenv('GEMINI_API_KEY')
     if not api_key:
-        st.error('⚠️ API ключ Gemini не настроен. Пожалуйста, установите его как переменную окружения.')
+        st.error('API ключ Gemini не настроен. Пожалуйста, установите его как переменную окружения.')
         st.stop()
 
     genai.configure(api_key=api_key)
@@ -150,12 +150,10 @@ def get_gemini_response(model, question):
 st.markdown(
      """
         <div style='text-align: center; padding: 1rem 0 2rem 0;'>
-            <h2 style='background: linear-gradient(135deg, #A855F7 0%, #E63946 100%);
-                       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-                       margin-bottom: 0.5rem;'>
-                🤖 Медицинский ассистент ИИ
+            <h2 style='color: #000000; margin-bottom: 0.5rem;'>
+                Медицинский ассистент ИИ
             </h2>
-            <h4 style='color: #718096; font-weight: 400;'>
+            <h4 style='color: #555555; font-weight: 400;'>
                 Специализированный консультант по болезни Альцгеймера на базе Google Gemini 2.5 Flash
             </h4>
         </div>
@@ -165,7 +163,7 @@ st.markdown(
 
 # API Key verification
 if not os.getenv('GEMINI_API_KEY'):
-    st.error('⚠️ API ключ Gemini не настроен. Пожалуйста, установите его как переменную окружения.')
+    st.error('API ключ Gemini не настроен. Пожалуйста, установите его как переменную окружения.')
     st.stop()
 
 # Initialize chat history
@@ -204,9 +202,9 @@ with col1:
 with col2:
     # Info card with modern design
     st.markdown("""
-        <div style='background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 1rem;'>
-            <h4 style='color: #2d3748; margin-bottom: 1rem; font-size: 1.1rem;'>ℹ️ Об этом ассистенте</h4>
-            <p style='color: #4a5568; line-height: 1.6; margin: 0;'>
+        <div style='background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 1rem; border: 1px solid #e0e0e0;'>
+            <h4 style='color: #000000; margin-bottom: 1rem; font-size: 1.1rem;'>Об этом ассистенте</h4>
+            <p style='color: #333333; line-height: 1.6; margin: 0;'>
                 На базе Google Gemini 2.5 Flash, этот ИИ-ассистент предоставляет информацию на основе доказательств
                 о болезни Альцгеймера и связанных нейродегенеративных заболеваниях.
             </p>
@@ -216,16 +214,16 @@ with col2:
     # Topics card
     st.markdown("""
         <div class='info-card'>
-            <h4>💡 Предлагаемые темы</h4>
+            <h4>Предлагаемые темы</h4>
             <ul style='margin: 0;'>
-                <li>🧠 Симптомы и диагностика</li>
-                <li>💊 Варианты лечения</li>
-                <li>⚠️ Факторы риска</li>
-                <li>🛡️ Стратегии профилактики</li>
-                <li>💝 Поддержка ухаживающих</li>
-                <li>🔬 Последние исследования</li>
-                <li>📋 Медицинские тесты</li>
-                <li>🏥 Медицинские ресурсы</li>
+                <li>Симптомы и диагностика</li>
+                <li>Варианты лечения</li>
+                <li>Факторы риска</li>
+                <li>Стратегии профилактики</li>
+                <li>Поддержка ухаживающих</li>
+                <li>Последние исследования</li>
+                <li>Медицинские тесты</li>
+                <li>Медицинские ресурсы</li>
             </ul>
         </div>
     """, unsafe_allow_html=True)
@@ -234,14 +232,13 @@ with col2:
 
     # Disclaimer
     st.info(
-        "⚠️ **Медицинское предупреждение:** Этот ИИ предоставляет общую информацию и образовательный контент. "
-        "Он не заменяет профессиональную медицинскую консультацию. Всегда консультируйтесь с квалифицированными медицинскими специалистами.",
-        icon="⚠️"
+        "**Медицинское предупреждение:** Этот ИИ предоставляет общую информацию и образовательный контент. "
+        "Он не заменяет профессиональную медицинскую консультацию. Всегда консультируйтесь с квалифицированными медицинскими специалистами."
     )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Clear button with modern styling
-    if st.button('🔄 Очистить беседу', use_container_width=True, type="secondary"):
+    if st.button('Очистить беседу', use_container_width=True, type="secondary"):
         st.session_state.messages = []
         st.rerun()
