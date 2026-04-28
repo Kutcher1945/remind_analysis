@@ -3,3 +3,7 @@ venv/
 .venv/
 ENV/
 env/
+
+# Environment variables / secrets
+.env
+.env.*
