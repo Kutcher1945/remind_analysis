@@ -19,7 +19,8 @@ def md_to_html(text):
     if not text:
         return ""
 
-    # Convert headers (do this before other formatting)
+    # Convert headers (do this before other formatting, most specific first)
+    text = re.sub(r'^#### (.+)$', r'<h4 style="color: #000000; font-size: 1.1rem; margin: 1.2rem 0 0.6rem 0; font-weight: 700;">\1</h4>', text, flags=re.MULTILINE)
     text = re.sub(r'^### (.+)$', r'<h3 style="color: #000000; font-size: 1.2rem; margin: 1.5rem 0 0.8rem 0; font-weight: 700;">\1</h3>', text, flags=re.MULTILINE)
     text = re.sub(r'^## (.+)$', r'<h2 style="color: #000000; font-size: 1.5rem; margin: 1.8rem 0 1rem 0; font-weight: 700;">\1</h2>', text, flags=re.MULTILINE)
     text = re.sub(r'^# (.+)$', r'<h1 style="color: #000000; font-size: 1.8rem; margin: 2rem 0 1rem 0; font-weight: 700;">\1</h1>', text, flags=re.MULTILINE)
