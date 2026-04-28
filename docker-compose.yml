@@ -1,0 +1,18 @@
+services:
+  remind-app:
+    build: .
+    container_name: remind_analysis
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      # Persist outputs between restarts
+      - ./outputs:/app/outputs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
