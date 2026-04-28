@@ -4,7 +4,7 @@ from PIL import Image
 import torch
 from torchvision import transforms
 from model_arch import AlzheimerDetector
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 import base64
 import io
@@ -59,11 +59,11 @@ if not GEMINI_API_KEY:
     st.stop()
 
 # Configure Gemini
-genai.configure(api_key=GEMINI_API_KEY)
-model_gemini = genai.GenerativeModel('gemini-2.5-flash')  # Make sure this is the correct model
+_genai_client = genai.Client(api_key=GEMINI_API_KEY)
+GEMINI_MODEL = 'gemini-3.1-flash-lite-preview'
 
 # Pixtral API Configuration
-PIXTRAL_API_KEY = "QqkMxELY0YVGkCx17Vya04Sq9nGvCahu"
+PIXTRAL_API_KEY = "556m2SLKNQBicaqmK7V7OOB2Seld7TvY"
 PIXTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions"
 
 # Page configuration
@@ -74,342 +74,174 @@ st.set_page_config(
     # initial_sidebar_state="expanded",
 )
 
-# Custom CSS styles - Modern Design
+# Custom CSS styles - Premium Dark Design
 st.markdown(
     """
     <style>
-    /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-    /* Global Styles */
-    * {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
+    * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
 
-    /* Sidebar Styling */
+    /* ── App background ── */
+    .stApp { background: #050a14 !important; }
+    .main  { background: #050a14 !important; padding: 2rem; }
+    [data-testid="stAppViewContainer"] { background: #050a14 !important; }
+    [data-testid="block-container"] { background: transparent !important; }
+
+    /* ── Sidebar ── */
     [data-testid="stSidebar"] {
-        background: #000000;
+        background: #0d1426 !important;
+        border-right: 1px solid rgba(255,255,255,0.07) !important;
     }
-
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-        color: white;
-        font-weight: 500;
-    }
-
-    /* Radio buttons in sidebar */
+    [data-testid="stSidebar"] * { color: rgba(255,255,255,0.75) !important; }
     [data-testid="stSidebar"] .row-widget.stRadio > div {
-        background-color: rgba(255, 255, 255, 0.1);
+        background: rgba(255,255,255,0.04);
         border-radius: 12px;
         padding: 8px;
+        border: 1px solid rgba(255,255,255,0.07);
     }
-
     [data-testid="stSidebar"] .row-widget.stRadio > div label {
-        background-color: transparent !important;
-        color: white !important;
-        padding: 12px 20px;
+        color: rgba(255,255,255,0.65) !important;
+        padding: 10px 16px;
         border-radius: 8px;
-        transition: all 0.3s ease;
-        cursor: pointer;
+        transition: all 0.2s;
     }
-
     [data-testid="stSidebar"] .row-widget.stRadio > div label:hover {
-        background-color: rgba(255, 255, 255, 0.2) !important;
-        transform: translateX(5px);
+        background: rgba(255,255,255,0.08) !important;
+        color: rgba(255,255,255,0.95) !important;
     }
 
-    [data-testid="stSidebar"] .row-widget.stRadio > div label[data-baseweb="radio"] > div:first-child {
-        background-color: white !important;
+    /* ── Global text ── */
+    h1, h2, h3, h4, h5, h6, p, span, div, label {
+        color: rgba(255,255,255,0.85) !important;
     }
+    h2 { font-size: 2.2rem !important; font-weight: 700 !important; letter-spacing: -0.5px !important; }
+    h4 { color: rgba(255,255,255,0.45) !important; font-weight: 400 !important; font-size: 1rem !important; }
 
-    /* Main content area */
-    .main {
-        padding: 2rem;
-    }
-
-    /* Headers */
-    h1, h2, h3, h4, h5, h6 {
-        font-weight: 700;
-        letter-spacing: -0.5px;
-    }
-
-    h2 {
-        color: #000000 !important;
-        font-size: 2.5rem !important;
-        margin-bottom: 0.5rem !important;
-    }
-
-    h4 {
-        color: #555555 !important;
-        font-weight: 400 !important;
-        font-size: 1.1rem !important;
-    }
-
-    /* Prediction Box */
-    .prediction-box {
-        background: #000000;
-        border-radius: 20px;
-        padding: 2.5rem;
-        margin: 2rem 0;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        text-align: center;
-        animation: fadeInUp 0.6s ease;
-    }
-
-    .prediction-box h3 {
-        color: white !important;
-        font-size: 1.8rem !important;
-        margin-bottom: 1rem !important;
-    }
-
-    .prediction-box p {
-        color: white !important;
-        font-size: 1.5rem !important;
-        font-weight: 600 !important;
-        margin-top: 1rem !important;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .prediction-box strong {
-        color: white !important;
-    }
-
-    /* Recommendations Box */
-    .recommendations-box {
-        background: white;
-        border-radius: 20px;
-        padding: 2.5rem;
-        margin: 2rem 0;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-        border: 1px solid #e2e8f0;
-    }
-
-    .recommendations-box h1,
-    .recommendations-box h2,
-    .recommendations-box h3 {
-        color: #000000 !important;
-        font-weight: 700 !important;
-    }
-
-    .recommendations-box h2 {
-        font-size: 2rem !important;
-        margin-bottom: 1.5rem !important;
-    }
-
-    .recommendations-box strong {
-        color: #000000 !important;
-        font-weight: 700 !important;
-    }
-
-    .recommendations-box hr {
-        border: none !important;
-        border-top: 3px solid #000000 !important;
-        margin: 1.5rem 0 !important;
-        opacity: 0.8 !important;
-    }
-
-    /* Buttons */
+    /* ── Buttons ── */
     .stButton > button {
-        background: #000000;
-        color: white;
-        border: none;
-        border-radius: 12px;
-        padding: 0.875rem 2.5rem;
-        font-size: 1.1rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.5);
-        background: #333333;
-    }
-
-    .stButton > button:active {
-        transform: translateY(0);
-    }
-
-    .stButton > button:disabled {
-        background: #e5e5e5 !important;
-        color: #999999 !important;
-        box-shadow: none !important;
-        cursor: not-allowed !important;
-        transform: none !important;
-    }
-
-    /* File Uploader */
-    [data-testid="stFileUploader"] {
-        background: white;
-        border: 2px dashed #000000;
-        border-radius: 16px;
-        padding: 2rem;
-        transition: all 0.3s ease;
-    }
-
-    [data-testid="stFileUploader"]:hover {
-        border-color: #333333;
-        background: #f5f5f5;
-    }
-
-    [data-testid="stFileUploader"] section {
+        background: linear-gradient(135deg, #3b5bdb, #22d3ee) !important;
+        color: white !important;
         border: none !important;
-        background-color: transparent !important;
+        border-radius: 10px !important;
+        padding: 0.75rem 2rem !important;
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        transition: all 0.2s !important;
+        box-shadow: 0 0 20px rgba(59,91,219,0.35) !important;
+        letter-spacing: 0.3px !important;
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 0 32px rgba(59,91,219,0.55) !important;
+        opacity: 0.92 !important;
+    }
+    .stButton > button:disabled {
+        background: rgba(255,255,255,0.07) !important;
+        color: rgba(255,255,255,0.25) !important;
+        box-shadow: none !important;
+        transform: none !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
     }
 
+    /* ── File Uploader ── */
+    [data-testid="stFileUploader"] {
+        background: rgba(255,255,255,0.03) !important;
+        border: 1.5px dashed rgba(59,91,219,0.4) !important;
+        border-radius: 16px !important;
+        padding: 1.5rem !important;
+        transition: all 0.2s !important;
+    }
+    [data-testid="stFileUploader"]:hover {
+        border-color: rgba(59,91,219,0.7) !important;
+        background: rgba(59,91,219,0.05) !important;
+    }
+    [data-testid="stFileUploader"] section { border: none !important; background: transparent !important; }
+    [data-testid="stFileUploader"] * { color: rgba(255,255,255,0.6) !important; }
     [data-testid="stFileUploader"] button {
-        background: #000000 !important;
+        background: linear-gradient(135deg, #3b5bdb, #22d3ee) !important;
         color: white !important;
+        border: none !important;
         border-radius: 8px !important;
-        padding: 0.5rem 1.5rem !important;
-        border: 1px solid #000000 !important;
     }
-
-    /* File uploader internal text visibility */
-    [data-testid="stFileUploader"] * {
-        color: #333333 !important;
-    }
-
-    [data-testid="stFileUploader"] button,
-    [data-testid="stFileUploader"] button * {
-        color: white !important;
-    }
-
-    [data-testid="stFileUploader"] button svg {
-        stroke: white !important;
-        fill: none !important;
-    }
-
-    [data-testid="stFileUploader"] button svg line,
+    [data-testid="stFileUploader"] button * { color: white !important; }
+    [data-testid="stFileUploader"] button svg,
     [data-testid="stFileUploader"] button svg path,
-    [data-testid="stFileUploader"] button svg polyline {
-        stroke: white !important;
-    }
+    [data-testid="stFileUploader"] button svg line { stroke: white !important; fill: none !important; }
+    [data-testid="stFileUploader"] small { color: rgba(255,255,255,0.35) !important; }
 
-    [data-testid="stFileUploader"] small {
-        color: #666666 !important;
-    }
-
-    [data-testid="stFileUploader"] svg {
-        fill: #333333 !important;
-    }
-
-    /* Image container */
-    .image-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin: 2rem 0;
-        animation: fadeIn 0.5s ease;
-    }
-
-    .image-container img {
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-        transition: transform 0.3s ease;
-    }
-
-    .image-container img:hover {
-        transform: scale(1.02);
-    }
-
-    .image-label {
-        margin-top: 1rem;
-        color: #333333;
-        font-weight: 500;
-        font-size: 1rem;
-    }
-
-    /* Warning/Info boxes */
-    .stAlert {
-        border-radius: 12px;
-        border: none;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    }
-
-    .stAlert p, .stAlert span, .stAlert div {
-        color: #000000 !important;
-        font-weight: 600 !important;
-    }
-
-    /* Animations */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
-
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Footer */
-    .footer {
+    /* ── Prediction box ── */
+    .prediction-box {
+        background: linear-gradient(135deg, rgba(59,91,219,0.15), rgba(34,211,238,0.1));
+        border: 1px solid rgba(59,91,219,0.3);
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin: 1.5rem 0;
         text-align: center;
-        padding: 2rem;
-        margin-top: 4rem;
-        border-top: 1px solid #cccccc;
-        color: #555555;
+        box-shadow: 0 0 40px rgba(59,91,219,0.2);
+        animation: fadeInUp 0.5s ease;
     }
+    .prediction-box h3 { color: rgba(255,255,255,0.95) !important; font-size: 1.1rem !important; font-weight: 500 !important; letter-spacing: 0.12em !important; text-transform: uppercase !important; margin-bottom: 0.5rem !important; }
+    .prediction-box p  { color: white !important; font-weight: 700 !important; }
+    .prediction-box strong { color: rgba(255,255,255,0.9) !important; }
 
-    .footer strong {
-        color: #000000;
-        font-size: 1.1rem;
+    /* ── Recommendations box ── */
+    .recommendations-box {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin: 2rem 0;
     }
+    .recommendations-box h2 { color: rgba(255,255,255,0.95) !important; font-size: 1.6rem !important; margin-bottom: 1.5rem !important; }
+    .recommendations-box h3 { color: rgba(255,255,255,0.85) !important; font-weight: 600 !important; }
+    .recommendations-box strong { color: rgba(255,255,255,0.9) !important; font-weight: 600 !important; }
+    .recommendations-box hr { border: none !important; border-top: 1px solid rgba(255,255,255,0.1) !important; margin: 1.2rem 0 !important; }
 
-    /* Spinner customization */
-    .stSpinner > div {
-        border-top-color: #000000 !important;
-    }
+    /* ── Image container ── */
+    .image-container { display: flex; flex-direction: column; align-items: center; margin: 1.5rem 0; }
+    .image-container img { border-radius: 16px; box-shadow: 0 0 40px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
+    .image-label { margin-top: 0.75rem; color: rgba(255,255,255,0.4) !important; font-size: 0.85rem; }
 
-    /* Spinner container and all elements must be visible */
-    .stSpinner,
-    [data-testid="stSpinner"],
-    .stSpinner > div,
-    [data-testid="stSpinner"] > div {
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
+    /* ── Alerts ── */
+    .stAlert { border-radius: 12px !important; }
+    div[data-testid="stNotification"] { background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 12px !important; }
 
-    /* Spinner text - comprehensive targeting */
-    .stSpinner,
-    .stSpinner *,
-    [data-testid="stSpinner"],
-    [data-testid="stSpinner"] *,
-    div[data-testid="stSpinner"] + div,
-    div[data-testid="stSpinner"] + div *,
-    .stSpinner ~ div,
-    .stSpinner ~ div *,
-    [class*="spinner"] *,
-    [class*="Spinner"] * {
-        color: #000000 !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
+    /* ── Spinner ── */
+    .stSpinner > div { border-top-color: #3b5bdb !important; }
+    .stSpinner *, [data-testid="stSpinner"] * { color: rgba(255,255,255,0.6) !important; }
 
-    /* Ensure spinner text elements have proper styling */
-    .stSpinner p,
-    .stSpinner span,
-    .stSpinner div,
-    [data-testid="stSpinner"] p,
-    [data-testid="stSpinner"] span,
-    [data-testid="stSpinner"] div {
-        color: #000000 !important;
-        font-weight: 600 !important;
-        font-size: 1.05rem !important;
+    /* ── Form inputs (Данные пациента page) ── */
+    input[type="text"], input[type="number"], textarea {
+        background: rgba(255,255,255,0.05) !important;
+        border: 1.5px solid rgba(255,255,255,0.1) !important;
+        border-radius: 10px !important;
+        color: rgba(255,255,255,0.85) !important;
+        -webkit-text-fill-color: rgba(255,255,255,0.85) !important;
     }
+    input:focus, textarea:focus {
+        border-color: rgba(59,91,219,0.6) !important;
+        box-shadow: 0 0 0 3px rgba(59,91,219,0.15) !important;
+    }
+    div[data-baseweb="select"] > div {
+        background: rgba(255,255,255,0.05) !important;
+        border: 1.5px solid rgba(255,255,255,0.1) !important;
+        color: rgba(255,255,255,0.85) !important;
+        border-radius: 10px !important;
+    }
+    ul[role="listbox"] { background: #0d1426 !important; border: 1px solid rgba(255,255,255,0.1) !important; }
+    ul[role="listbox"] li { color: rgba(255,255,255,0.75) !important; background: transparent !important; }
+    ul[role="listbox"] li:hover { background: rgba(255,255,255,0.08) !important; }
+
+    /* ── Divider lines ── */
+    hr { border-color: rgba(255,255,255,0.08) !important; }
+
+    /* ── Column image labels ── */
+    .stImage p { color: rgba(255,255,255,0.5) !important; }
+
+    /* ── Animations ── */
+    @keyframes fadeIn    { from { opacity:0 } to { opacity:1 } }
+    @keyframes fadeInUp  { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
     </style>
     """,
     unsafe_allow_html=True,
@@ -613,8 +445,8 @@ transform = transforms.Compose([
 ])
 
 # Sidebar
-st.sidebar.image('img/logo_3.jpg', use_container_width=True)
-options = st.sidebar.radio('Опции:', ['Данные пациента', 'Диагностика', 'Виртуальный ассистент'])
+st.sidebar.image('img/logo_3.jpg', width="stretch")
+options = st.sidebar.radio('Опции:', ['Данные пациента', 'Диагностика', 'Виртуальный ассистент'], index=1)
 
 # Main page image
 
@@ -627,13 +459,12 @@ def get_base64_of_image(image_path):
 image_path = "img/medical.jpg"
 base64_image = get_base64_of_image(image_path)
 
-# Apply modern background styling
+# Apply background styling
 st.markdown(
     f"""
     <style>
-    /* Background with subtle gradient overlay */
     .stApp {{
-        background: #ffffff;
+        background: #050a14;
         background-attachment: fixed;
     }}
 
@@ -816,36 +647,127 @@ st.markdown(
 
     /* Horizontal rules */
     div[style] hr {{
-        border-color: #e2e8f0;
+        border-color: rgba(255,255,255,0.08);
+    }}
+
+    /* ── Dark inputs (comprehensive override) ── */
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stTextArea > div > div > textarea {{
+        background: rgba(255,255,255,0.05) !important;
+        border: 1.5px solid rgba(255,255,255,0.1) !important;
+        border-radius: 10px !important;
+        color: rgba(255,255,255,0.85) !important;
+        -webkit-text-fill-color: rgba(255,255,255,0.85) !important;
+        caret-color: rgba(255,255,255,0.85) !important;
+        padding: 0.65rem 0.9rem !important;
+        font-size: 0.95rem !important;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
+    }}
+    .stTextInput > div > div > input:focus,
+    .stNumberInput > div > div > input:focus,
+    .stTextArea > div > div > textarea:focus {{
+        border-color: rgba(59,91,219,0.6) !important;
+        box-shadow: 0 0 0 3px rgba(59,91,219,0.15) !important;
+        outline: none !important;
+    }}
+    .stTextInput > div > div > input::placeholder,
+    .stTextArea > div > div > textarea::placeholder {{
+        color: rgba(255,255,255,0.25) !important;
+        -webkit-text-fill-color: rgba(255,255,255,0.25) !important;
+    }}
+
+    /* Number input container & +/- buttons */
+    .stNumberInput > div > div {{
+        background: rgba(255,255,255,0.05) !important;
+        border: 1.5px solid rgba(255,255,255,0.1) !important;
+        border-radius: 10px !important;
+    }}
+    button[data-testid="stNumberInputStepUp"],
+    button[data-testid="stNumberInputStepDown"] {{
+        background: rgba(255,255,255,0.07) !important;
+        border: none !important;
+        border-left: 1px solid rgba(255,255,255,0.08) !important;
+        color: rgba(255,255,255,0.6) !important;
+        border-radius: 0 !important;
+    }}
+    button[data-testid="stNumberInputStepUp"]:hover,
+    button[data-testid="stNumberInputStepDown"]:hover {{
+        background: rgba(255,255,255,0.12) !important;
+    }}
+    button[data-testid="stNumberInputStepUp"] svg path,
+    button[data-testid="stNumberInputStepDown"] svg path {{
+        stroke: rgba(255,255,255,0.6) !important;
+        fill: none !important;
+    }}
+
+    /* Selectbox */
+    .stSelectbox > div > div[data-baseweb="select"] > div {{
+        background: rgba(255,255,255,0.05) !important;
+        border: 1.5px solid rgba(255,255,255,0.1) !important;
+        border-radius: 10px !important;
+        color: rgba(255,255,255,0.85) !important;
+    }}
+    .stSelectbox > div > div[data-baseweb="select"] > div:focus-within {{
+        border-color: rgba(59,91,219,0.6) !important;
+        box-shadow: 0 0 0 3px rgba(59,91,219,0.15) !important;
+    }}
+    .stSelectbox svg {{ fill: rgba(255,255,255,0.4) !important; }}
+    [data-baseweb="popover"], [data-baseweb="menu"] {{
+        background: #0d1426 !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        border-radius: 10px !important;
+    }}
+    [data-baseweb="option"] {{
+        background: transparent !important;
+        color: rgba(255,255,255,0.75) !important;
+    }}
+    [data-baseweb="option"]:hover {{
+        background: rgba(59,91,219,0.15) !important;
+    }}
+
+    /* Input labels */
+    .stTextInput label, .stNumberInput label,
+    .stTextArea label, .stSelectbox label {{
+        color: rgba(255,255,255,0.45) !important;
+        font-size: 0.8rem !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.04em !important;
     }}
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# st.image('img/home_page.jpg', use_container_width=True)
+# st.image('img/home_page.jpg', width="stretch")
 
 if options == 'Данные пациента':
     exec(open("paciente.py", encoding="utf-8").read())
 
 elif options == 'Диагностика':
-    # Header with modern design
     st.markdown("""
-        <div style='text-align: center; padding: 1rem 0 2rem 0;'>
-            <h2 style='margin-bottom: 0.5rem;'>Диагностика на основе ИИ</h2>
-            <h4 style='color: #555555; font-weight: 400;'>
-                Продвинутая классификация болезни Альцгеймера с использованием глубокого обучения и анализа МРТ
-            </h4>
+        <div style='text-align:center; padding: 2rem 0 2.5rem 0;'>
+            <div style='display:inline-flex;align-items:center;gap:8px;background:rgba(59,91,219,0.1);
+                        border:1px solid rgba(59,91,219,0.3);border-radius:999px;padding:6px 16px;margin-bottom:1.2rem;'>
+                <div style='width:7px;height:7px;border-radius:50%;background:#22d3ee;
+                            animation:fadeIn 1s infinite alternate;'></div>
+                <span style='font-size:0.72rem;font-weight:600;letter-spacing:0.18em;
+                             text-transform:uppercase;color:#22d3ee !important;'>ИИ-диагностика</span>
+            </div>
+            <h2 style='color:rgba(255,255,255,0.95) !important;font-size:2.2rem !important;
+                       margin-bottom:0.6rem !important;'>Диагностика на основе ИИ</h2>
+            <p style='color:rgba(255,255,255,0.38) !important;font-size:1rem;max-width:560px;margin:0 auto;line-height:1.6;'>
+                Классификация болезни Альцгеймера с использованием глубокого обучения и анализа МРТ.
+                Точность модели — <strong style='color:rgba(255,255,255,0.7) !important;'>95.47%</strong>
+            </p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Image upload section with modern card design
     st.markdown("""
-        <div style='text-align: center; margin-bottom: 1.5rem;'>
-            <p style='font-size: 1.1rem; color: #333333;'>
-                Загрузите МРТ снимок для начала анализа
-            </p>
-        </div>
+        <p style='text-align:center;font-size:0.9rem;color:rgba(255,255,255,0.3) !important;
+                  margin-bottom:0.5rem;letter-spacing:0.05em;'>
+            Загрузите МРТ снимок для начала анализа
+        </p>
     """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -871,7 +793,7 @@ elif options == 'Диагностика':
                 <div class='image-container'>
                     <img src='{image_base64}'
                          style='max-width: 100%; width: 500px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.15);'>
-                    <p class='image-label'>Image Uploaded</p>
+                    <p class='image-label'>МРТ снимок загружен</p>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -925,11 +847,16 @@ elif options == 'Диагностика':
         st.markdown(f"""
             <div class='prediction-box'>
                 <h3>Результат диагностики</h3>
-                <p style='font-size: 2rem; margin: 1.5rem 0;'>{predicted_class}</p>
-                <div style='background: rgba(255,255,255,0.2); border-radius: 12px; padding: 1rem; margin-top: 1rem;'>
-                    <p style='font-size: 1rem; margin: 0; opacity: 0.9;'>
-                        Уверенность модели: <strong>{confidence_percent:.1f}%</strong>
-                    </p>
+                <p style='font-size:2.2rem;margin:1rem 0 0.5rem 0;font-weight:800;
+                          background:linear-gradient(135deg,rgba(255,255,255,0.95),rgba(255,255,255,0.6));
+                          -webkit-background-clip:text;-webkit-text-fill-color:transparent;'>
+                    {predicted_class}
+                </p>
+                <div style='display:inline-flex;align-items:center;gap:8px;margin-top:1rem;
+                            background:rgba(34,211,238,0.12);border:1px solid rgba(34,211,238,0.3);
+                            border-radius:999px;padding:8px 20px;'>
+                    <span style='color:rgba(255,255,255,0.5) !important;font-size:0.85rem;'>Уверенность:</span>
+                    <strong style='color:#22d3ee !important;font-size:1rem;'>{confidence_percent:.1f}%</strong>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -937,9 +864,11 @@ elif options == 'Диагностика':
         # Display Grad-CAM Visualization
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("""
-            <div style='text-align: center; margin: 2rem 0 1rem 0;'>
-                <h3 style='color: #000000;'>Визуализация внимания модели ИИ (Grad-CAM)</h3>
-                <p style='color: #555555; font-size: 0.95rem;'>
+            <div style='text-align:center;margin:2rem 0 1.2rem 0;'>
+                <h3 style='color:rgba(255,255,255,0.9) !important;font-size:1.2rem !important;font-weight:600 !important;'>
+                    Визуализация внимания модели ИИ (Grad-CAM)
+                </h3>
+                <p style='color:rgba(255,255,255,0.35) !important;font-size:0.9rem;margin-top:0.3rem;'>
                     Тепловая карта показывает, на какие области мозга ИИ обратил внимание при прогнозировании
                 </p>
             </div>
@@ -948,20 +877,22 @@ elif options == 'Диагностика':
         # Display three images side by side
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.markdown("<p style='text-align: center; font-weight: 500; color: #333333;'>Оригинальное МРТ</p>", unsafe_allow_html=True)
-            st.image(image, use_container_width=True)
+            st.markdown("<p style='text-align:center;font-size:0.8rem;color:rgba(255,255,255,0.4) !important;margin-bottom:0.5rem;'>Оригинальное МРТ</p>", unsafe_allow_html=True)
+            st.image(image, width="stretch")
         with col2:
-            st.markdown("<p style='text-align: center; font-weight: 500; color: #333333;'>Тепловая карта Grad-CAM</p>", unsafe_allow_html=True)
-            st.image(gradcam_results['heatmap_only'], use_container_width=True)
+            st.markdown("<p style='text-align:center;font-size:0.8rem;color:rgba(255,255,255,0.4) !important;margin-bottom:0.5rem;'>Тепловая карта Grad-CAM</p>", unsafe_allow_html=True)
+            st.image(gradcam_results['heatmap_only'], width="stretch")
         with col3:
-            st.markdown("<p style='text-align: center; font-weight: 500; color: #333333;'>Комбинированный вид</p>", unsafe_allow_html=True)
-            st.image(gradcam_results['overlayed'], use_container_width=True)
+            st.markdown("<p style='text-align:center;font-size:0.8rem;color:rgba(255,255,255,0.4) !important;margin-bottom:0.5rem;'>Комбинированный вид</p>", unsafe_allow_html=True)
+            st.image(gradcam_results['overlayed'], width="stretch")
 
         st.markdown("""
-            <div style='background: #f5f5f5; border-left: 4px solid #000000; padding: 1rem; margin: 1rem 0; border-radius: 8px;'>
-                <p style='margin: 0; color: #333333; font-size: 0.9rem;'>
-                    <strong>Как читать:</strong> Красные/желтые области указывают на регионы, на которых сосредоточился ИИ.
-                    Более горячие цвета (красный) = большее внимание, более холодные цвета (синий) = меньшее внимание.
+            <div style='background:rgba(59,91,219,0.08);border-left:3px solid rgba(59,91,219,0.5);
+                        padding:0.9rem 1.2rem;margin:1rem 0;border-radius:0 10px 10px 0;'>
+                <p style='margin:0;color:rgba(255,255,255,0.55) !important;font-size:0.85rem;line-height:1.6;'>
+                    <strong style='color:rgba(255,255,255,0.8) !important;'>Как читать:</strong>
+                    Красные/жёлтые области — на чём сосредоточился ИИ.
+                    Горячие цвета (красный) = высокое внимание, холодные (синий) = низкое.
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -979,9 +910,11 @@ elif options == 'Диагностика':
         # Display progress indicator
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("""
-            <div style='text-align: center; margin: 2rem 0 1rem 0;'>
-                <h3 style='color: #000000;'>Многоэтапный конвейер анализа ИИ</h3>
-                <p style='color: #555555; font-size: 0.95rem;'>
+            <div style='text-align:center;margin:2rem 0 1.2rem 0;'>
+                <h3 style='color:rgba(255,255,255,0.9) !important;font-size:1.2rem !important;font-weight:600 !important;'>
+                    Многоэтапный конвейер анализа ИИ
+                </h3>
+                <p style='color:rgba(255,255,255,0.35) !important;font-size:0.9rem;margin-top:0.3rem;'>
                     Завершите каждый этап для получения комплексных медицинских заключений
                 </p>
             </div>
@@ -999,17 +932,22 @@ elif options == 'Диагностика':
             with col:
                 if "[Done]" in step:
                     st.markdown(f"""
-                        <div style='background: #000000;
-                                    color: white; padding: 1rem; border-radius: 12px; text-align: center;
-                                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);'>
-                            <strong>{step.replace('[Done] ', '')}</strong>
+                        <div style='background:linear-gradient(135deg,rgba(59,91,219,0.2),rgba(34,211,238,0.15));
+                                    border:1px solid rgba(59,91,219,0.4);padding:0.9rem 1rem;
+                                    border-radius:12px;text-align:center;
+                                    box-shadow:0 0 16px rgba(59,91,219,0.2);'>
+                            <span style='color:rgba(255,255,255,0.9) !important;font-weight:600;font-size:0.85rem;'>
+                                ✓ {step.replace('[Done] ', '')}
+                            </span>
                         </div>
                     """, unsafe_allow_html=True)
                 elif "[Pending]" in step:
                     st.markdown(f"""
-                        <div style='background: #f5f5f5; color: #333333; padding: 1rem;
-                                    border-radius: 12px; text-align: center; border: 2px dashed #999999;'>
-                            <strong>{step.replace('[Pending] ', '')}</strong>
+                        <div style='background:rgba(255,255,255,0.03);border:1.5px dashed rgba(255,255,255,0.12);
+                                    padding:0.9rem 1rem;border-radius:12px;text-align:center;'>
+                            <span style='color:rgba(255,255,255,0.3) !important;font-weight:500;font-size:0.85rem;'>
+                                {step.replace('[Pending] ', '')}
+                            </span>
                         </div>
                     """, unsafe_allow_html=True)
 
@@ -1023,7 +961,7 @@ elif options == 'Диагностика':
             step2_disabled = st.session_state.analysis_step >= 1
             get_detailed_analysis = st.button(
                 "Этап 2: Получить детальный анализ областей мозга",
-                use_container_width=True,
+                width="stretch",
                 disabled=step2_disabled,
                 type="primary" if not step2_disabled else "secondary"
             )
@@ -1037,12 +975,14 @@ elif options == 'Диагностика':
 
             # Display the analysis
             st.markdown(f"""
-                <div style='background: white; border-radius: 20px; padding: 2.5rem; margin: 2rem 0;
-                            box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 3px solid #000000;'>
-                    <h2 style='color: #000000; font-size: 1.8rem; margin-bottom: 1.5rem; text-align: center; font-weight: 700;'>
+                <div style='background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);
+                            border-radius:20px;padding:2.5rem;margin:2rem 0;'>
+                    <h2 style='color:rgba(255,255,255,0.92) !important;font-size:1.4rem !important;
+                               margin-bottom:1.5rem;text-align:center;font-weight:700 !important;
+                               border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:1rem;'>
                         Региональный анализ областей мозга
                     </h2>
-                    <div style='color: #2d3748; line-height: 1.9; font-size: 1.05rem;'>
+                    <div style='color:rgba(255,255,255,0.65);line-height:1.9;font-size:0.95rem;'>
                         {md_to_html(st.session_state.brain_analysis_result)}
                     </div>
                 </div>
@@ -1138,7 +1078,7 @@ IX. ИССЛЕДОВАНИЯ И КЛИНИЧЕСКИЕ ИСПЫТАНИЯ
 """
 
             try:
-                response = model_gemini.generate_content(prompt)
+                response = _genai_client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
                 return response.text
             except Exception as e:
                 st.error(f"Ошибка генерации рекомендаций: {str(e)}")
@@ -1151,7 +1091,7 @@ IX. ИССЛЕДОВАНИЯ И КЛИНИЧЕСКИЕ ИСПЫТАНИЯ
             step3_disabled = st.session_state.analysis_step < 1
             get_recommendations = st.button(
                 "Этап 3: Получить комплексные медицинские рекомендации",
-                use_container_width=True,
+                width="stretch",
                 disabled=step3_disabled,
                 type="primary" if not step3_disabled else "secondary",
                 help="Сначала завершите Этап 2" if step3_disabled else "Сгенерировать финальные рекомендации, используя все данные анализа"
@@ -1194,17 +1134,19 @@ IX. ИССЛЕДОВАНИЯ И КЛИНИЧЕСКИЕ ИСПЫТАНИЯ
 
             # Display recommendations with modern design
             st.markdown(f"""
-                <div class='recommendations-box' style='border: 3px solid #000000;'>
-                    <h2 style='text-align: center; margin-bottom: 2rem; color: #000000; font-size: 2rem; font-weight: 700;'>
+                <div class='recommendations-box'>
+                    <h2 style='text-align:center;margin-bottom:1.5rem;'>
                         Комплексный план медицинских действий
                     </h2>
-                    <div style='background: #000000; padding: 1.2rem; border-radius: 10px; margin-bottom: 2rem;'>
-                        <p style='margin: 0; color: #ffffff; font-size: 0.95rem; line-height: 1.6;'>
-                            <strong style='font-weight: 700;'>Использованные источники данных:</strong> Диагноз CNN ({predicted_class}, уверенность {confidence_percent:.1f}%)
-                            + Визуализация Grad-CAM + Региональный анализ мозга + Медицинская литература
+                    <div style='background:linear-gradient(135deg,rgba(59,91,219,0.12),rgba(34,211,238,0.08));
+                                border:1px solid rgba(59,91,219,0.25);padding:1rem 1.2rem;
+                                border-radius:12px;margin-bottom:2rem;'>
+                        <p style='margin:0;color:rgba(255,255,255,0.55) !important;font-size:0.85rem;line-height:1.6;'>
+                            <strong style='color:rgba(255,255,255,0.8) !important;'>Источники данных:</strong>
+                            CNN диагноз ({predicted_class}, {confidence_percent:.1f}%) · Grad-CAM · Региональный анализ · Медицинская литература
                         </p>
                     </div>
-                    <div style='line-height: 1.9; color: #2d3748; font-size: 1.05rem;'>
+                    <div style='line-height:1.9;color:rgba(255,255,255,0.65);font-size:0.95rem;'>
                         {md_to_html(recommendations)}
                     </div>
                 </div>
@@ -1225,16 +1167,24 @@ IX. ИССЛЕДОВАНИЯ И КЛИНИЧЕСКИЕ ИСПЫТАНИЯ
     else:
         # Show helpful instructions when no image is uploaded
         st.markdown("""
-            <div style='background: white; border-radius: 20px; padding: 3rem; margin: 2rem auto; max-width: 600px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; border: 1px solid #e0e0e0;'>
-                <h3 style='color: #000000; margin-bottom: 1rem;'>Готов к анализу</h3>
-                <p style='color: #555555; font-size: 1.05rem; line-height: 1.6;'>
+            <div style='background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+                        border-radius:20px;padding:3rem;margin:2rem auto;max-width:600px;text-align:center;'>
+                <div style='font-size:2.5rem;margin-bottom:1rem;'>🧠</div>
+                <h3 style='color:rgba(255,255,255,0.9) !important;font-size:1.2rem !important;
+                           font-weight:600 !important;margin-bottom:0.8rem !important;'>
+                    Готов к анализу
+                </h3>
+                <p style='color:rgba(255,255,255,0.4) !important;font-size:0.95rem;line-height:1.7;'>
                     Загрузите МРТ снимок выше, чтобы начать анализ болезни Альцгеймера с помощью ИИ.
-                    Наша модель глубокого обучения классифицирует стадию и предоставит выводы.
+                    Модель классифицирует стадию и предоставит детальные выводы.
                 </p>
-                <div style='margin-top: 2rem; padding: 1.5rem; background: #f5f5f5; border-radius: 12px;'>
-                    <p style='margin: 0; color: #333333; font-size: 0.95rem;'>
-                        <strong>Поддерживаемые форматы:</strong> JPG, JPEG, PNG<br>
-                        <strong>Точность модели:</strong> 95.47%
+                <div style='margin-top:1.8rem;padding:1rem 1.5rem;
+                            background:rgba(59,91,219,0.08);border:1px solid rgba(59,91,219,0.2);
+                            border-radius:12px;display:inline-block;'>
+                    <p style='margin:0;color:rgba(255,255,255,0.45) !important;font-size:0.85rem;line-height:1.8;'>
+                        <strong style='color:rgba(255,255,255,0.7) !important;'>Поддерживаемые форматы:</strong> JPG, JPEG, PNG<br>
+                        <strong style='color:rgba(255,255,255,0.7) !important;'>Точность модели:</strong>
+                        <span style='color:#22d3ee !important;font-weight:600;'> 95.47%</span>
                     </p>
                 </div>
             </div>
@@ -1243,27 +1193,27 @@ IX. ИССЛЕДОВАНИЯ И КЛИНИЧЕСКИЕ ИСПЫТАНИЯ
 elif options == 'Виртуальный ассистент':
     exec(open("chatbot.py", encoding="utf-8").read())
 
-# Modern Footer
+# Footer
 st.markdown("""
-    <div class='footer'>
-        <div style='max-width: 800px; margin: 0 auto;'>
-            <div style='margin-bottom: 1.5rem;'>
-                <strong style='font-size: 1.2rem; color: #000000;'>
-                    ReMind.AI
-                </strong>
-            </div>
-            <p style='line-height: 1.8; margin-bottom: 1rem;'>
-                Продвинутое обнаружение болезни Альцгеймера с помощью ИИ, использующее глубокое обучение и компьютерное зрение.<br>
-                Построено на архитектуре PyTorch TinyVGG16 с точностью 95.47%.
+    <div style='margin-top:4rem;border-top:1px solid rgba(255,255,255,0.07);padding:2rem 1rem;text-align:center;'>
+        <div style='max-width:800px;margin:0 auto;'>
+            <p style='font-size:1rem;font-weight:700;color:rgba(255,255,255,0.85) !important;margin-bottom:0.5rem;'>
+                ReMind.AI
             </p>
-            <div style='padding: 1rem; background: #f5f5f5; border-radius: 12px; margin: 1.5rem 0;'>
-                <p style='margin: 0; font-size: 0.9rem; color: #333333;'>
-                    <strong>Медицинское предупреждение:</strong> Результаты должны быть интерпретированы квалифицированными медицинскими специалистами.
-                    Этот инструмент предназначен для помощи, а не для замены профессионального медицинского суждения.
+            <p style='font-size:0.85rem;color:rgba(255,255,255,0.35) !important;line-height:1.7;margin-bottom:1.2rem;'>
+                Обнаружение болезни Альцгеймера с помощью ИИ.<br>
+                Архитектура PyTorch TinyVGG16 · Точность 95.47%
+            </p>
+            <div style='display:inline-block;padding:0.75rem 1.2rem;background:rgba(251,191,36,0.08);
+                        border:1px solid rgba(251,191,36,0.25);border-radius:10px;margin-bottom:1.5rem;'>
+                <p style='margin:0;font-size:0.8rem;color:rgba(255,255,255,0.5) !important;line-height:1.6;'>
+                    <strong style='color:rgba(251,191,36,0.9) !important;'>⚠ Медицинское предупреждение:</strong>
+                    Результаты должны быть интерпретированы квалифицированными специалистами.
+                    Инструмент предназначен для помощи, а не для замены врача.
                 </p>
             </div>
-            <p style='margin-top: 2rem; font-size: 0.9rem;'>
-                © 2025 ReMind.AI | На базе Gemini и Streamlit
+            <p style='font-size:0.75rem;color:rgba(255,255,255,0.2) !important;'>
+                © 2025 ReMind.AI · На базе Gemini и Streamlit
             </p>
         </div>
     </div>

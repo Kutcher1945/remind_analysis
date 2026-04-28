@@ -14,7 +14,7 @@
  * }
  */
 
-const PIXTRAL_API_KEY = "QqkMxELY0YVGkCx17Vya04Sq9nGvCahu";
+const PIXTRAL_API_KEY = "556m2SLKNQBicaqmK7V7OOB2Seld7TvY";
 const PIXTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
 
 export interface ValidationResult {
