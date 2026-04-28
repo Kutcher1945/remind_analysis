@@ -25,6 +25,8 @@ RUN mkdir -p .streamlit && printf '\
 port = 8501\n\
 address = "0.0.0.0"\n\
 headless = true\n\
+enableCORS = false\n\
+enableXsrfProtection = false\n\
 \n\
 [browser]\n\
 gatherUsageStats = false\n\
